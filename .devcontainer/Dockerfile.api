@@ -44,11 +44,10 @@ RUN git clone https://github.com/openfheorg/openfhe-python.git \
 # Install openfhe as a pip package
 WORKDIR /openfhe-python
 RUN python3 setup.py sdist bdist_wheel && pip install dist/openfhe-*.whl
-
+RUN pip install "fastapi[standard]" web3 tenacity pydantic_settings
 # Now install aca-py
-RUN pip install aries-cloudagent indy-credx indy-vdr anoncreds aries-askar
-RUN adduser indy 
+RUN adduser api
 WORKDIR /app
 COPY . /app 
-RUN chown -R indy.indy /app
-USER indy
+RUN chown -R api.api /app
+USER api
