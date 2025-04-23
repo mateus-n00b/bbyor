@@ -28,7 +28,6 @@ contract BBYOR {
      * @dev Set contract deployer as BBYOR
      */
     constructor() {
-        console.log("BBYOR contract deployed by:", msg.sender);
         BBYOR = msg.sender; // 'msg.sender' is sender of current call, contract deployer for a constructor
         emit BBYORSet(address(0), BBYOR);
     }

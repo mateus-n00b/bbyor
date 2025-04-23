@@ -6,7 +6,7 @@ import os
 class Settings(BaseSettings):
     # --- Agent Configuration ---
     ACAPY_URL: str = Field(
-        default="http://localhost:8000",
+        default="http://localhost:8445",
         description="ACA-Py Admin API URL",
         env="ACAPY_URL"
     )
@@ -46,7 +46,7 @@ class Settings(BaseSettings):
         description="Path to Genesis FHE file"
     )
     CONTRACT_ADDR: str = Field(
-        default="0xYourContractAddress",
+        default="0x5FbDB2315678afecb367f032d93F642f64180aa3",
         env="CONTRACT_ADDR"
     )
     CONTRACT_ABI_PATH: FilePath = Field(
