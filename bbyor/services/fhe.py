@@ -1,5 +1,5 @@
 from openfhe import *
-from ..config import DEFAULT_DIR
+from config.settings import settings
 # 1. Inicializar o contexto
 params = CCParamsBFVRNS()
 params.SetPlaintextModulus(65537)
@@ -42,12 +42,12 @@ def genKey() -> KeyPair:
 # Pk should be pk.bin
 # Sk should be sk.bin
 def serializeKeyToFile(dest: str, key) -> None: 
-    SerializeToFile(DEFAULT_DIR+"/"+dest, key, BINARY)
+    SerializeToFile(settings.DEFAULT_DIR+"/"+dest, key, BINARY)
 
-def loadPkFromFile(filename: str = DEFAULT_DIR+"/pk.bin"):
+def loadPkFromFile(filename: str = settings.DEFAULT_DIR+"/pk.bin"):
     return DeserializePublicKey(filename, BINARY)
 
-def loadSkFromFile(filename: str = DEFAULT_DIR+"/sk.bin"):
+def loadSkFromFile(filename: str = settings.DEFAULT_DIR+"/sk.bin"):
     return DeserializePrivateKey(filename, BINARY)
 
 def makePackedList(value: str):

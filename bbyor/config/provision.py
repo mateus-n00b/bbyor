@@ -2,9 +2,9 @@ import os
 from pathlib import Path
 import logging
 from typing import Optional, Tuple
-from ..services.fhe import genKey, serializeKeyToFile
-from ..services.connections import missing_conn, doConnections
-from .settings import settings
+from services.fhe import genKey, serializeKeyToFile
+from services.connections import missing_conn, establish_connection
+from . import settings
 
 
 logger = logging.getLogger(__name__)

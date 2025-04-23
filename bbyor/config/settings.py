@@ -13,15 +13,27 @@ class Settings(BaseSettings):
     CONNECTIONS_URL: str = "/connections"
     DID_EXCHANGE_ENDPOINT: str = "/didexchange/create-request?their_public_did="
 
+    # ----- Logging --------
+    LOG_LEVEL: Optional[str] = Field(
+        default=os.getenv("LOG_LEVEL", "DEBUG"),
+        description="User home directory",
+        env="LOG_LEVEL"
+    )
+    LOG_FILE: Optional[str] = Field(
+        default=os.getenv("LOG_FILE"),
+        description="User home directory",        
+    )
+
     # --- Paths ---
     HOME: Optional[str] = Field(
         default=os.getenv("HOME"),
         description="User home directory",
         env="HOME"
     )
-    DEFAULT_DIR: DirectoryPath = Field(
+    DEFAULT_DIR: str = Field(
         default=f"{os.getenv('HOME', '/tmp')}/.config/bbyor",
-        description="Default config directory"
+        description="Default config directory",
+        env="DEFAULT_DIR"
     )
 
     # --- Blockchain ---
@@ -38,7 +50,7 @@ class Settings(BaseSettings):
         env="CONTRACT_ADDR"
     )
     CONTRACT_ABI_PATH: FilePath = Field(
-        default="../contracts/artifacts/abi.json",
+        default="./contracts/artifacts/abi.json",
         description="Path to contract ABI file"
     )
 

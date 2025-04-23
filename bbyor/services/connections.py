@@ -1,8 +1,8 @@
 import requests as rq
 from typing import List, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
-from ..config.settings import settings
-from ..utils.logging import get_logger
+from config.settings import settings
+from utils.logging import get_logger
 
 logger = get_logger()
 
