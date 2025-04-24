@@ -16,6 +16,40 @@ class ContractClient:
     def get_latest_value(self):
         """Example: Read a 'getValue()' function from the contract"""
         return self.contract.functions.getValue().call()
+    
+    def _signtx(self):
+        signed_tx = self.w3.eth.account.sign_transaction(tx, private_key=settings.PRIVATE_KEY)
+        return signed_tx
+    
+    def send_tx(self, signed_tx):
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            return tx_hash
+    
+    def get_receipt(self, tx_hash):
+         receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+         return receipt
+    
+    def get_peer(self):
+        account = self.w3.eth.account.from_key("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+        nonce = self.w3.eth.get_transaction_count(account.address)
+        tx = self.contract.functions.setRandomPeer().build_transaction({
+        'from': account.address,
+        'nonce': nonce,
+        'gas': 200000,
+        'gasPrice': self.w3.to_wei('10', 'gwei')
+        })
+        signed_tx = self._signtx()
+        hash = self.send_tx(signed_tx)
+        receipt = self.get_receipt(hash)
+        logs = self.contract.events.PeerSelected().process_receipt(receipt)
+        if logs:
+            selected_peer = logs[0]['args']['peer']
+            timestamp = logs[0]['args']['timestamp']
+            print(f"Selected peer: {selected_peer} at time {timestamp}")
+        else:
+            print("No PeerSelected event found")
 
+
+        
 # Singleton instance
 contract_client = ContractClient()

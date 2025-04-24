@@ -16,7 +16,7 @@ class ContractPoller:
         self.logger.info("Starting contract poller daemon")
         while not self._shutdown:
             try:
-                value = contract_client.get_latest_value()
+                
                 self.logger.info(f"Latest contract value: {value}")
                 await self._process_value(value)  # Custom logic
             except Exception as e:

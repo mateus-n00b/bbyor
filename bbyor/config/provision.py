@@ -20,7 +20,7 @@ def provision() -> Optional[Tuple[Path, Path]]:
     """    
     try:
         # Establish connections        
-        doConnections(missing_conn())
+        establish_connection(missing_conn())
         # Create FHE keys
         # Convert to Path objects (more robust than string paths)
         config_dir = Path(settings.DEFAULT_DIR)
