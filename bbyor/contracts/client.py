@@ -17,7 +17,7 @@ class ContractClient:
         """Example: Read a 'getValue()' function from the contract"""
         return self.contract.functions.getValue().call()
     
-    def _signtx(self):
+    def signtx(self, tx):
         signed_tx = self.w3.eth.account.sign_transaction(tx, private_key=settings.PRIVATE_KEY)
         return signed_tx
     
@@ -33,12 +33,12 @@ class ContractClient:
         account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
         nonce = self.w3.eth.get_transaction_count(account.address)
         tx = self.contract.functions.setRandomPeer().build_transaction({
-        'from': account.address,
-        'nonce': nonce,
-        'gas': 200000,
-        'gasPrice': self.w3.to_wei('10', 'gwei')
+            'from': account.address,
+            'nonce': nonce,
+            'gas': 200000,
+            'gasPrice': self.w3.to_wei('10', 'gwei')
         })
-        signed_tx = self._signtx()
+        signed_tx = self.signtx(tx)
         hash = self.send_tx(signed_tx)
         receipt = self.get_receipt(hash)
         logs = self.contract.events.PeerSelected().process_receipt(receipt)
@@ -48,7 +48,6 @@ class ContractClient:
             print(f"Selected peer: {selected_peer} at time {timestamp}")
         else:
             print("No PeerSelected event found")
-
 
         
 # Singleton instance
