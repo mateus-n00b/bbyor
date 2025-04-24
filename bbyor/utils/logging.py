@@ -4,7 +4,7 @@ from logging.handlers import RotatingFileHandler
 from typing import Any, Dict, Optional
 from fastapi import Request
 from pythonjsonlogger import jsonlogger
-from config.settings import settings
+from ..config.settings import settings
 
 class RequestContextFilter(logging.Filter):
     """Add FastAPI request context to logs"""

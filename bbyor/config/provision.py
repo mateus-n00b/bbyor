@@ -1,13 +1,13 @@
 import os
 from pathlib import Path
-import logging
+from ..utils.logging import get_logger
 from typing import Optional, Tuple
-from services.fhe import genKey, serializeKeyToFile
-from services.connections import missing_conn, establish_connection
-from . import settings
+from ..services.fhe import genKey, serializeKeyToFile
+from ..services.connections import missing_conn, establish_connection, get_public_did
+from .settings import settings
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 def provision() -> Optional[Tuple[Path, Path]]:
     """
@@ -19,6 +19,10 @@ def provision() -> Optional[Tuple[Path, Path]]:
         Tuple of (public_key_path, secret_key_path) if keys were generated, else None.
     """    
     try:
+        # Get agent's public DID
+        # did = get_public_did()
+        # I dont think this gonna work
+        # settings.PUBLIC_DID != did
         # Establish connections        
         establish_connection(missing_conn())
         # Create FHE keys

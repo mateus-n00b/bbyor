@@ -51,3 +51,9 @@ bbyor/                     # Root package
 └── scripts/               # Helper scripts (e.g., provisioning)
     └── bootstrap.py       # First-time setup
 ```
+
+Aca-py cmd
+
+```
+aca-py start --inbound-transport http 0.0.0.0 8155  --outbound-transport ws --outbound-transport http --log-level debug --endpoint http://localhost:8155 --label BANCO2 --seed 02fcd69da34927bc93bae7229e73ea81 --genesis-url http://localhost:9000/genesis --ledger-pool-name localindypool --wallet-key 123456 --wallet-name bancoumwallet6 --wallet-type askar-anoncreds --admin 0.0.0.0 8254 --admin-insecure-mode --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request --auto-store-credential --auto-respond-presentation-proposal --auto-respond-credential-request --auto-respond-credential-proposal --debug-connections --debug-credentials --debug-presentations --auto-provision --requests-through-public-did --admin-client-max-request-size 8
+```

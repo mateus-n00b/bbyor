@@ -1,8 +1,9 @@
+import json
 import requests as rq
 from typing import List, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
-from config.settings import settings
-from utils.logging import get_logger
+from ..config.settings import settings
+from ..utils.logging import get_logger
 
 logger = get_logger()
 
@@ -26,19 +27,33 @@ def get_connections() -> Optional[dict]:
         logger.error(f"Connection check failed: {str(e)}")
         raise
 
-def missing_conn(peers: List[str]) -> List[str]:
+def missing_conn() -> List[str]:   
     """Identify missing connections with proper error handling"""
     try:
-        connections_data = get_connections()
-        if not connections_data:
-            return []
-            
-        existing_connections = [conn["their_did"] for conn in connections_data.get("results", [])]
-        return [peer for peer in peers if peer not in existing_connections]
+        with open(settings.GENESIS_FHE) as f:
+            peers = json.loads(f)    
+            connections_data = get_connections()
+            if not connections_data:
+                return []
+                
+            existing_connections = [conn["their_did"] for conn in connections_data.get("results", [])]
+            return [peer for peer in peers if peer not in existing_connections and peer != settings.PUBLIC_DID]
         
     except Exception as e:
         logger.critical(f"Failed to check missing connections: {str(e)}")
         return []
+
+
+def get_public_did():
+    response = rq.get(
+            f"{settings.ACAPY_URL}{settings.WALLET_PUBLIC_DID}",
+            timeout=10
+        )
+    if response.status_code == 200:
+        logger.info(f"DID recovered")
+        result = response.json()["result"]
+        return result["did"]
+    return None
 
 @retry(
     stop=stop_after_attempt(2),

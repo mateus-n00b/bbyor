@@ -1,10 +1,9 @@
 import json
 from fastapi import Request, FastAPI
-from config.provision import  provision
+from .config.provision import  provision
 import requests as rq
-import utils
 from contextlib import asynccontextmanager
-from daemons.contract_poller import start_daemon
+from .daemons.contract_poller import start_daemon
 import asyncio
 
 @asynccontextmanager

@@ -1,5 +1,5 @@
 from openfhe import *
-from config.settings import settings
+from ..config.settings import settings
 # 1. Inicializar o contexto
 params = CCParamsBFVRNS()
 params.SetPlaintextModulus(65537)

@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     )
     CONNECTIONS_URL: str = "/connections"
     DID_EXCHANGE_ENDPOINT: str = "/didexchange/create-request?their_public_did="
+    WALLET_PUBLIC_DID: str = "/wallet/did/public"
+    PUBLIC_DID: str = Field(
+        default=os.getenv('PUBLIC_DID', "NA"),
+        description="Agent's public did",
+        env="PUBLIC_DID"
+    )
 
     # ----- Logging --------
     LOG_LEVEL: Optional[str] = Field(
@@ -42,7 +48,7 @@ class Settings(BaseSettings):
         env="PROVIDER_URL"
     )
     GENESIS_FHE: str = Field(
-        default="../contracts/genesis_openfhe.json",
+        default="./contracts/genesis_openfhe.json",
         description="Path to Genesis FHE file"
     )
     CONTRACT_ADDR: str = Field(
@@ -57,6 +63,8 @@ class Settings(BaseSettings):
         default="./contracts/artifacts/abi.json",
         description="Path to contract ABI file"
     )
+
+    POLL_INTERVAL: int = 15
 
     # --- Dynamic Defaults and Validation ---
     @field_validator("DEFAULT_DIR", mode="before")

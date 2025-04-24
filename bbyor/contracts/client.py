@@ -1,6 +1,6 @@
 # contracts/client.py
 from web3 import Web3
-from config.settings import settings
+from ..config.settings import settings
 import json
 
 class ContractClient:
@@ -44,10 +44,11 @@ class ContractClient:
         logs = self.contract.events.PeerSelected().process_receipt(receipt)
         if logs:
             selected_peer = logs[0]['args']['peer']
-            timestamp = logs[0]['args']['timestamp']
-            print(f"Selected peer: {selected_peer} at time {timestamp}")
+            interval = logs[0]['args']['timestamp']
+            print(f"Selected peer: {selected_peer} at time {interval}")
         else:
             print("No PeerSelected event found")
+        return selected_peer, interval
 
         
 # Singleton instance

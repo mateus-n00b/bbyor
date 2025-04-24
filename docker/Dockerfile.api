@@ -46,8 +46,8 @@ WORKDIR /openfhe-python
 RUN python3 setup.py sdist bdist_wheel && pip install dist/openfhe-*.whl
 RUN pip install "fastapi[standard]" web3 tenacity pydantic_settings python-json-logger
 # Now install aca-py
-RUN adduser api
+RUN useradd bbyor
 WORKDIR /app
 COPY bbyor /app 
-RUN chown -R api.api /app
-USER api
+RUN chown -R bbyor:bbyor /app
+USER bbyor
