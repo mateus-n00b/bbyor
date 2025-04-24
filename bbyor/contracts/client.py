@@ -30,7 +30,7 @@ class ContractClient:
          return receipt
     
     def get_peer(self):
-        account = self.w3.eth.account.from_key("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+        account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
         nonce = self.w3.eth.get_transaction_count(account.address)
         tx = self.contract.functions.setRandomPeer().build_transaction({
         'from': account.address,
