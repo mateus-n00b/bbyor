@@ -5,7 +5,6 @@ import json
 
 class ContractClient:
     def __init__(self):
-        print(settings.PROVIDER_URL, settings.CONTRACT_ADDR)
         self.w3 = Web3(Web3.HTTPProvider(settings.PROVIDER_URL))
         with open(settings.CONTRACT_ABI_PATH) as f:
             abi = json.load(f)

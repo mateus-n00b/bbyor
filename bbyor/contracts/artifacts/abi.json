@@ -1,561 +1,136 @@
 [
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "target",
-                "type": "address"
-            }
-        ],
-        "name": "AddressEmptyCode",
-        "type": "error"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "implementation",
-                "type": "address"
-            }
-        ],
-        "name": "ERC1967InvalidImplementation",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "ERC1967NonPayable",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "FailedInnerCall",
-        "type": "error"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "did",
-                "type": "string"
-            }
-        ],
-        "name": "IncorrectDid",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "InvalidInitialization",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "NotInitializing",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "PackedPtrLen__LenOverflow",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "PackedPtrLen__PtrOverflow",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "Slice__OutOfBounds",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "UUPSUnauthorizedCallContext",
-        "type": "error"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "bytes32",
-                "name": "slot",
-                "type": "bytes32"
-            }
-        ],
-        "name": "UUPSUnsupportedProxiableUUID",
-        "type": "error"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "operation",
-                "type": "string"
-            },
-            {
-                "internalType": "string",
-                "name": "description",
-                "type": "string"
-            }
-        ],
-        "name": "UnsupportedOperation",
-        "type": "error"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "uint64",
-                "name": "version",
-                "type": "uint64"
-            }
-        ],
-        "name": "Initialized",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "implementation",
-                "type": "address"
-            }
-        ],
-        "name": "Upgraded",
-        "type": "event"
-    },
-    {
-        "inputs": [],
-        "name": "UPGRADE_INTERFACE_VERSION",
-        "outputs": [
-            {
-                "internalType": "string",
-                "name": "",
-                "type": "string"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "upgradeControlAddress",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "didRegistryddress",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "ethereumDIDRegistryAddress",
-                "type": "address"
-            }
-        ],
-        "name": "initialize",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "proxiableUUID",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "",
-                "type": "bytes32"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "id",
-                "type": "string"
-            }
-        ],
-        "name": "resolveDocument",
-        "outputs": [
-            {
-                "components": [
-                    {
-                        "internalType": "string[]",
-                        "name": "context",
-                        "type": "string[]"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "id",
-                        "type": "string"
-                    },
-                    {
-                        "internalType": "string[]",
-                        "name": "controller",
-                        "type": "string[]"
-                    },
-                    {
-                        "components": [
-                            {
-                                "internalType": "string",
-                                "name": "id",
-                                "type": "string"
-                            },
-                            {
-                                "internalType": "string",
-                                "name": "verificationMethodType",
-                                "type": "string"
-                            },
-                            {
-                                "internalType": "string",
-                                "name": "controller",
-                                "type": "string"
-                            },
-                            {
-                                "internalType": "string",
-                                "name": "publicKeyJwk",
-                                "type": "string"
-                            },
-                            {
-                                "internalType": "string",
-                                "name": "publicKeyMultibase",
-                                "type": "string"
-                            }
-                        ],
-                        "internalType": "struct VerificationMethod[]",
-                        "name": "verificationMethod",
-                        "type": "tuple[]"
-                    },
-                    {
-                        "components": [
-                            {
-                                "internalType": "string",
-                                "name": "id",
-                                "type": "string"
-                            },
-                            {
-                                "components": [
-                                    {
-                                        "internalType": "string",
-                                        "name": "id",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "verificationMethodType",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "controller",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "publicKeyJwk",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "publicKeyMultibase",
-                                        "type": "string"
-                                    }
-                                ],
-                                "internalType": "struct VerificationMethod",
-                                "name": "verificationMethod",
-                                "type": "tuple"
-                            }
-                        ],
-                        "internalType": "struct VerificationRelationship[]",
-                        "name": "authentication",
-                        "type": "tuple[]"
-                    },
-                    {
-                        "components": [
-                            {
-                                "internalType": "string",
-                                "name": "id",
-                                "type": "string"
-                            },
-                            {
-                                "components": [
-                                    {
-                                        "internalType": "string",
-                                        "name": "id",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "verificationMethodType",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "controller",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "publicKeyJwk",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "publicKeyMultibase",
-                                        "type": "string"
-                                    }
-                                ],
-                                "internalType": "struct VerificationMethod",
-                                "name": "verificationMethod",
-                                "type": "tuple"
-                            }
-                        ],
-                        "internalType": "struct VerificationRelationship[]",
-                        "name": "assertionMethod",
-                        "type": "tuple[]"
-                    },
-                    {
-                        "components": [
-                            {
-                                "internalType": "string",
-                                "name": "id",
-                                "type": "string"
-                            },
-                            {
-                                "components": [
-                                    {
-                                        "internalType": "string",
-                                        "name": "id",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "verificationMethodType",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "controller",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "publicKeyJwk",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "publicKeyMultibase",
-                                        "type": "string"
-                                    }
-                                ],
-                                "internalType": "struct VerificationMethod",
-                                "name": "verificationMethod",
-                                "type": "tuple"
-                            }
-                        ],
-                        "internalType": "struct VerificationRelationship[]",
-                        "name": "capabilityInvocation",
-                        "type": "tuple[]"
-                    },
-                    {
-                        "components": [
-                            {
-                                "internalType": "string",
-                                "name": "id",
-                                "type": "string"
-                            },
-                            {
-                                "components": [
-                                    {
-                                        "internalType": "string",
-                                        "name": "id",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "verificationMethodType",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "controller",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "publicKeyJwk",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "publicKeyMultibase",
-                                        "type": "string"
-                                    }
-                                ],
-                                "internalType": "struct VerificationMethod",
-                                "name": "verificationMethod",
-                                "type": "tuple"
-                            }
-                        ],
-                        "internalType": "struct VerificationRelationship[]",
-                        "name": "capabilityDelegation",
-                        "type": "tuple[]"
-                    },
-                    {
-                        "components": [
-                            {
-                                "internalType": "string",
-                                "name": "id",
-                                "type": "string"
-                            },
-                            {
-                                "components": [
-                                    {
-                                        "internalType": "string",
-                                        "name": "id",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "verificationMethodType",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "controller",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "publicKeyJwk",
-                                        "type": "string"
-                                    },
-                                    {
-                                        "internalType": "string",
-                                        "name": "publicKeyMultibase",
-                                        "type": "string"
-                                    }
-                                ],
-                                "internalType": "struct VerificationMethod",
-                                "name": "verificationMethod",
-                                "type": "tuple"
-                            }
-                        ],
-                        "internalType": "struct VerificationRelationship[]",
-                        "name": "keyAgreement",
-                        "type": "tuple[]"
-                    },
-                    {
-                        "components": [
-                            {
-                                "internalType": "string",
-                                "name": "id",
-                                "type": "string"
-                            },
-                            {
-                                "internalType": "string",
-                                "name": "serviceType",
-                                "type": "string"
-                            },
-                            {
-                                "internalType": "string",
-                                "name": "serviceEndpoint",
-                                "type": "string"
-                            },
-                            {
-                                "internalType": "string[]",
-                                "name": "accept",
-                                "type": "string[]"
-                            },
-                            {
-                                "internalType": "string[]",
-                                "name": "routingKeys",
-                                "type": "string[]"
-                            }
-                        ],
-                        "internalType": "struct Service[]",
-                        "name": "service",
-                        "type": "tuple[]"
-                    },
-                    {
-                        "internalType": "string[]",
-                        "name": "alsoKnownAs",
-                        "type": "string[]"
-                    }
-                ],
-                "internalType": "struct DidDocument",
-                "name": "document",
-                "type": "tuple"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "id",
-                "type": "string"
-            }
-        ],
-        "name": "resolveMetadata",
-        "outputs": [
-            {
-                "components": [
-                    {
-                        "internalType": "address",
-                        "name": "creator",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "created",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "updated",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "bool",
-                        "name": "deactivated",
-                        "type": "bool"
-                    }
-                ],
-                "internalType": "struct DidMetadata",
-                "name": "metadata",
-                "type": "tuple"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "newImplementation",
-                "type": "address"
-            },
-            {
-                "internalType": "bytes",
-                "name": "data",
-                "type": "bytes"
-            }
-        ],
-        "name": "upgradeToAndCall",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
-    }
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "oldOwner",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "OwnerSet",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint8",
+				"name": "peer",
+				"type": "uint8"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			}
+		],
+		"name": "PeerSelected",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "changeOwner",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "something",
+				"type": "string"
+			}
+		],
+		"name": "setPair",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "setRandomPeer",
+		"outputs": [
+			{
+				"internalType": "uint8",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [],
+		"name": "getOwner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getRandomPeer",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "lastRandomInterval",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "totalEntries",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
 ]
