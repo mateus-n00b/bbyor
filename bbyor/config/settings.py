@@ -11,6 +11,7 @@ class Settings(BaseSettings):
         env="ACAPY_URL"
     )
     CONNECTIONS_URL: str = "/connections"
+    BASIC_MESSAGE_URI: str = "/connections/{0}/send-message"
     DID_EXCHANGE_ENDPOINT: str = "/didexchange/create-request?their_public_did="
     WALLET_PUBLIC_DID: str = "/wallet/did/public"
     PUBLIC_DID: str = Field(
@@ -28,6 +29,18 @@ class Settings(BaseSettings):
     LOG_FILE: Optional[str] = Field(
         default=os.getenv("LOG_FILE"),
         description="User home directory",        
+    )
+
+    # --- FHE ---
+    UPPER_BOUND: int = Field(
+        default=9999,
+        description="Random upper bound",
+        env="UPPER_BOUND"
+    )
+    LOWER_BOUND: int = Field(
+        default=10,
+        description="Random lower bound",
+        env="LOWER_BOUND"
     )
 
     # --- Paths ---

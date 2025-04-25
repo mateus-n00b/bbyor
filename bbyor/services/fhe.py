@@ -39,6 +39,11 @@ cc.Enable(PKESchemeFeature.ADVANCEDSHE)
 def genKey() -> KeyPair:
     return cc.KeyGen()
 
+def deserialize(a):
+    return DeserializeCiphertext(a)
+
+def serialize(a): 
+    return Serialize(a, BINARY)
 # Pk should be pk.bin
 # Sk should be sk.bin
 def serializeKeyToFile(dest: str, key) -> None:
@@ -56,15 +61,15 @@ def loadSkFromFile(filename: str = settings.DEFAULT_DIR+"/sk.bin"):
 def makePackedList(value: str):
     return cc.MakePackedPlaintext([int(value)])
 
-def evalSub(valueA: Ciphertext, valueB: str):
+def evalSub(valueA: Ciphertext, valueB: int):
     _b = makePackedList(valueB)
     return cc.EvalSub(valueA, _b)
 
-def evalAdd(valueA: Ciphertext, valueB: str):
+def evalAdd(valueA: Ciphertext, valueB: int):
     _b = makePackedList(valueB)
     return cc.EvalAdd(valueA, _b)
 
-def encrypt(value: str) -> Ciphertext:
+def encrypt(value: int) -> Ciphertext:
     pk_a = makePackedList(value)
     a = cc.Encrypt(loadPkFromFile(), pk_a)
     return a

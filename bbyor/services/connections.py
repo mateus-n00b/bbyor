@@ -111,3 +111,6 @@ def handle_connections() -> dict:
         f"Connection results: {len(results['success'])} succeeded, "
         f"{len(results['failed'])} failed")
     return results
+
+def send_message(connection_id: str, message: dict):
+    response = rq.post(settings.BASIC_MESSAGE_URI.format(connection_id), json={"content": str(message)})

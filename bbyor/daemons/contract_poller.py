@@ -32,9 +32,9 @@ class ContractPoller:
 
             await asyncio.sleep(self.interval)
 
-    async def _process_value(self, value):
+    async def _process_value(self, did):
         """Override this with your business logic"""
-
+        
         pass
 
     def shutdown(self):

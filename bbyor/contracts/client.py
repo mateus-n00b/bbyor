@@ -32,6 +32,28 @@ class ContractClient:
          receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
          return receipt
     
+    def get_nonce(self, a: int):
+        account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
+        nonce = self.w3.eth.get_transaction_count(account.address)
+        tx = self.contract.functions.getNonce().build_transaction({
+            'from': account.address,
+            'nonce': nonce,
+            'gas': 300000,
+            'gasPrice': self.w3.to_wei('10', 'gwei')
+        })
+        signed_tx = self.signtx(tx)
+        hash = self.send_tx(signed_tx)
+        receipt = self.get_receipt(hash)
+        logs = self.contract.events.NonceCreated().process_receipt(receipt)
+        if logs:
+            nonce = logs[0]['args']['nonce']
+            did = logs[0]['args']['did']
+            print(f"Selected nonce: {nonce} for did {did}")
+        else:
+            print("No nonce event found")
+        return nonce
+
+
     def get_peer(self):
         account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
         nonce = self.w3.eth.get_transaction_count(account.address)
