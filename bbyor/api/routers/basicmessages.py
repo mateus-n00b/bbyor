@@ -8,6 +8,6 @@ logger = get_logger()
 @router.post("/topic/basicmessages/")
 async def handle_basic_message(request: Request):
     body = await request.json()
-    logger.info(f"Received message...")
+    logger.info(f"Received message from {body['connection_id']}...")
     handle_messages(body)
     return {"status": "processed"}

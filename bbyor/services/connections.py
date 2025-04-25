@@ -36,7 +36,7 @@ def missing_conn() -> List[str]:
             if not connections_data:
                 return []
                 
-            existing_connections = [conn["their_public_did"] for conn in connections_data.get("results", [])]
+            existing_connections = [conn.get("their_public_did") for conn in connections_data.get("results", [])]
             return [peer for peer in peers if peer not in existing_connections and peer != settings.PUBLIC_DID]
         
     except Exception as e:

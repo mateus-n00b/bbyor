@@ -14,7 +14,7 @@ services:
   #     - CONTRACT_ADDR=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
   #     - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
   #   networks:
-  #     - host
+  #     - bbyor
   #   ports:
   #     - 9701:9701
   #     - 9702:9702
@@ -25,10 +25,10 @@ services:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.api 
-    network_mode: host         
+    # network_mode: host         
     image: bbyor
     user: 1000:1000
-    command: fastapi dev main.py
+    command: fastapi dev main.py --host 0.0.0.0 --port 8000
     environment:
       - ACAPY_URL=http://192.168.0.19:8254
       - PUBLIC_DID=18q1r8BkyTQLMKC7XxPuG
@@ -38,15 +38,17 @@ services:
       - GENESIS_FHE=./contracts/genesis_openfhe.json
       - CONTRACT_ADDR=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
       - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-    # networks:
-    #   - host    
+    networks:
+      - bbyor 
+    ports:
+      - 8001:8000   
     volumes:
       - nodeA-data:/home/bbyor/.config/bbyor
 
   node2:
     image: bbyor
     user: 1000:1000
-    command: fastapi dev main.py
+    command: fastapi dev main.py --host 0.0.0.0
     environment:
       - ACAPY_URL=http://192.168.0.19:8255
       - PUBLIC_DID=AQjRaYC89jBJL4e7SEYwaP
@@ -57,8 +59,10 @@ services:
       - GENESIS_FHE=./contracts/genesis_openfhe.json
       - CONTRACT_ADDR=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
       - PRIVATE_KEY=0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
-    # networks:
-    #   - host
+    networks:
+      - bbyor
+    ports:
+      - 8002:8000
     volumes:
       - nodeB-data:/home/bbyor/.config/bbyor
 
@@ -75,7 +79,7 @@ services:
   #     - CONTRACT_ADDR=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
   #     - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
   #   networks:
-  #     - host
+  #     - bbyor
   #   ports:
   #     - 9705:9705
   #     - 9706:9706
@@ -95,15 +99,15 @@ services:
   #     - CONTRACT_ADDR=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
   #     - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
   #   networks:
-  #     - host
+  #     - bbyor
   #   ports:
   #     - 9707:9707
   #     - 9708:9708
   #   volumes:
   #     - node4-data:/home/bbyor/.config/bbyor
 
-# networks:
-#   host:
+networks:
+  bbyor:
 
 volumes:
   nodeA-data:

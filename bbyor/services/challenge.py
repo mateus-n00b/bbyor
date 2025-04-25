@@ -1,4 +1,5 @@
 import json
+import os
 from typing import List
 from .fhe import evalAdd, encrypt, deserialize, serialize 
 from ..contracts.client import contract_client
@@ -27,18 +28,21 @@ def get_nonce():
 def propose_challenge():
     results = get_connections()["results"]
     connection_ids = [conn["connection_id"] for conn in results if conn["rfc23_state"] == "completed" 
-                      and "their_public_did" in conn ]
+                      and "their_public_did" in conn and conn["their_public_did"] != settings.PUBLIC_DID]
     a = encrypt(_random())
     nonce = get_nonce()
-    logger.info(f"Creating challenge with nonce {nonce}... {results} {connection_ids}")
+    logger.info(f"Creating challenge with nonce {nonce}...")
     c = evalAdd(a, nonce)
     # get hash of serialized c
-    # here 
-    # 
+    c = serialize(c)
+    h = MD5.new()
+    h.update(c)    
+    hash = h.hexdigest() 
+    os.environ["LAST_HASH"] = hash # gambiarra
     a = serialize(a)
     msg = {"type": "challenge" ,"a": a.hex(), "b": nonce}
     for conn in connection_ids:
-        logger.info(f"Sending it to conn: {conn}")
+        logger.info(f"Sending it to conn: {conn} - Expected hash: {hash}")
         send_message(conn, msg)
 
 # HINT: registrar resposta do basicmessage 
@@ -47,20 +51,23 @@ def propose_challenge():
 # TODO: gerar prova ZKP
 def handle_challenge(body, msg):
     a = bytes.fromhex(msg["a"])
-    b = msg["b"]
+    b = int(msg["b"])
     # Deserialize to FHE
-    logger.info("Received challenge. Proccessing...")
+    logger.info(f"Received challenge nonce {b}. Proccessing...")
     a = deserialize(a)
     c = evalAdd(a,b)
     c = serialize(c)
     h = MD5.new()
     h.update(c)    
     hash = h.hexdigest()
-    logger.info(f"Sending ADD result hash {hash}")    
     conn_id = body["connection_id"] # send it back 
+    logger.info(f"Sending ADD result hash {hash} to {conn_id}")        
     body = {"type": "fhe_result", "hash": str(hash)}
     send_message(conn_id, body)
 
 def handle_result(body, msg):
     conn_id = body["connection_id"]
-    logger.info(f"Received result from {conn_id} -> {msg['hash']}")
+    _hash = os.getenv("LAST_HASH")
+    logger.info(f"Received result from {conn_id} -> {msg['hash']} == {_hash}")
+    if  _hash == msg["hash"]:
+        logger.info("SUCCESS!!!!")
