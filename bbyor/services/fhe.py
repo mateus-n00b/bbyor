@@ -40,7 +40,7 @@ def genKey() -> KeyPair:
     return cc.KeyGen()
 
 def deserialize(a):
-    return DeserializeCiphertextString(a)
+    return DeserializeCiphertextString(a, BINARY)
 
 def serialize(a): 
     return Serialize(a, BINARY)
@@ -54,10 +54,10 @@ def serializeKeyToFile(dest: str, key) -> None:
 
 def loadPkFromFile(filename: str = settings.DEFAULT_DIR+"/pk.bin"):
     # DeserializePublicKeyString maybe
-    return DeserializePublicKeyString(open(filename, 'rb'), BINARY)
+    return DeserializePublicKeyString(open(filename, 'rb').read(), BINARY)
 
 def loadSkFromFile(filename: str = settings.DEFAULT_DIR+"/sk.bin"):
-    return DeserializePrivateKeyString(open(filename, 'rb'), BINARY)
+    return DeserializePrivateKeyString(open(filename, 'rb').read(), BINARY)
 
 def makePackedList(value: str):
     return cc.MakePackedPlaintext([int(value)])
@@ -66,7 +66,7 @@ def evalSub(valueA: Ciphertext, valueB: int):
     _b = makePackedList(valueB)
     return cc.EvalSub(valueA, _b)
 
-def evalAdd(valueA: Ciphertext, valueB: int):
+def evalAdd(valueA: Ciphertext, valueB: int):    
     _b = makePackedList(valueB)
     return cc.EvalAdd(valueA, _b)
 

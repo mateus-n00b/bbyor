@@ -32,6 +32,7 @@ class ContractClient:
          receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
          return receipt
     
+    # TODO: include hashing result logic
     def get_nonce(self, a: int):
         account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
         nonce = self.w3.eth.get_transaction_count(account.address)

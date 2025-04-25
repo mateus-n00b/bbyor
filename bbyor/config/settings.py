@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     )
     CONNECTIONS_URL: str = "/connections"
     BASIC_MESSAGE_URI: str = "/connections/{0}/send-message"
-    DID_EXCHANGE_ENDPOINT: str = "/didexchange/create-request?their_public_did="
+    DID_EXCHANGE_ENDPOINT: str = "/didexchange/create-request?their_public_did={}&goal=BBYOR"
     WALLET_PUBLIC_DID: str = "/wallet/did/public"
     PUBLIC_DID: str = Field(
         default=os.getenv('PUBLIC_DID', "NA"),

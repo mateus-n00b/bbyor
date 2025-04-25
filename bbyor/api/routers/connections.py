@@ -7,5 +7,4 @@ logger = get_logger()
 @router.post("/topic/connections/")
 async def connections(request: Request):
     body = await request.json()
-    print(body)
     return {"status": "processed"}

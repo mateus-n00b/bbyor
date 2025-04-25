@@ -1,3 +1,4 @@
+import json
 from typing import List
 from .fhe import evalAdd, encrypt, deserialize, serialize 
 from ..contracts.client import contract_client
@@ -20,24 +21,46 @@ def compute_challenge(a:int, nonce: int):
     return c
     
 def get_nonce():
-    nonce = contract_client.get_nonce()
+    nonce = contract_client.get_nonce(1)
     return int(nonce)
 
 def propose_challenge():
     results = get_connections()["results"]
-    connection_ids = [conn["connection_id"] for conn in results["connection_id"] if conn["state"] == "active" ]
+    connection_ids = [conn["connection_id"] for conn in results if conn["rfc23_state"] == "completed" 
+                      and "their_public_did" in conn ]
     a = encrypt(_random())
-    a = serialize(a)
     nonce = get_nonce()
+    logger.info(f"Creating challenge with nonce {nonce}... {results} {connection_ids}")
     c = evalAdd(a, nonce)
-    msg = {"type": "challenge" ,"a": str(a), "b": nonce}
+    # get hash of serialized c
+    # here 
+    # 
+    a = serialize(a)
+    msg = {"type": "challenge" ,"a": a.hex(), "b": nonce}
     for conn in connection_ids:
-        send_message(msg)
+        logger.info(f"Sending it to conn: {conn}")
+        send_message(conn, msg)
 
-def handle_challenge(msg):
-    a = msg["a"]
+# HINT: registrar resposta do basicmessage 
+# na blockchain como garantia de que o receptor recebeu o desafio
+# e vice-versa
+# TODO: gerar prova ZKP
+def handle_challenge(body, msg):
+    a = bytes.fromhex(msg["a"])
     b = msg["b"]
     # Deserialize to FHE
+    logger.info("Received challenge. Proccessing...")
     a = deserialize(a)
     c = evalAdd(a,b)
-    logger.info("Sending ADD result")
+    c = serialize(c)
+    h = MD5.new()
+    h.update(c)    
+    hash = h.hexdigest()
+    logger.info(f"Sending ADD result hash {hash}")    
+    conn_id = body["connection_id"] # send it back 
+    body = {"type": "fhe_result", "hash": str(hash)}
+    send_message(conn_id, body)
+
+def handle_result(body, msg):
+    conn_id = body["connection_id"]
+    logger.info(f"Received result from {conn_id} -> {msg['hash']}")

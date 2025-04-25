@@ -63,7 +63,7 @@ def establish_connection(did: str) -> bool:
     """Create connection with retry logic"""
     try:
         response = rq.post(
-            f"{settings.ACAPY_URL}{settings.DID_EXCHANGE_ENDPOINT}{did}",
+            f"{settings.ACAPY_URL}{settings.DID_EXCHANGE_ENDPOINT.format(did)}",
             timeout=10
         )
         
@@ -113,4 +113,5 @@ def handle_connections() -> dict:
     return results
 
 def send_message(connection_id: str, message: dict):
-    response = rq.post(settings.BASIC_MESSAGE_URI.format(connection_id), json={"content": str(message)})
+    message = json.dumps(message)
+    response = rq.post(settings.ACAPY_URL+settings.BASIC_MESSAGE_URI.format(connection_id), json={"content": str(message)})
