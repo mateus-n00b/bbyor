@@ -5,6 +5,7 @@ from ..utils.logging import get_logger
 from signal import SIGINT, SIGTERM
 from ..contracts.client import contract_client
 from ..config.settings import settings
+from ..services.challenge import propose_challenge
 
 class ContractPoller:
     def __init__(self, interval_sec: int = 30):
@@ -34,8 +35,8 @@ class ContractPoller:
 
     async def _process_value(self, did):
         """Override this with your business logic"""
-        
-        pass
+        if did == settings.PUBLIC_DID:
+            propose_challenge()           
 
     def shutdown(self):
         """Graceful shutdown"""
