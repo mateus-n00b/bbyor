@@ -90,10 +90,11 @@ contract BBYOR {
        emit PeerSelected(peers[random], lastRandomInterval);
     } 
 
-    // function getRandomPeer() public view returns (uint256) 
-    // {
-    //     return lastChosenPeer;
-    // }
+    function getLastChosenPeer() public view returns (string memory) 
+    {
+        require(peers.length > 0, "No registered nodes yet!");
+        return peers[lastChosenPeer];
+    }
 
     /** 
      * @dev Return owner address 

@@ -15,8 +15,11 @@ class ContractClient:
 
     def get_latest_value(self):
         """Example: Read a 'getValue()' function from the contract"""
-        return self.contract.functions.getValue().call()
+        return self.contract.functions.getLastChosenPeer().call()
     
+    def get_latest_interval(self):
+         return self.contract.functions.lastRandomInterval().call()
+
     def signtx(self, tx):
         signed_tx = self.w3.eth.account.sign_transaction(tx, private_key=settings.PRIVATE_KEY)
         return signed_tx
@@ -44,7 +47,7 @@ class ContractClient:
         logs = self.contract.events.PeerSelected().process_receipt(receipt)
         if logs:
             selected_peer = logs[0]['args']['peer']
-            interval = logs[0]['args']['timestamp']
+            interval = logs[0]['args']['interval']
             print(f"Selected peer: {selected_peer} at time {interval}")
         else:
             print("No PeerSelected event found")

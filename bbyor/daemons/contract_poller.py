@@ -11,6 +11,7 @@ class ContractPoller:
         self.interval = interval_sec
         self._shutdown = False
         self.logger = get_logger()
+        self.lastChosenPeer = None
 
     async def run(self):
         """Main daemon loop"""
@@ -22,7 +23,13 @@ class ContractPoller:
                 self.logger.info(f"Latest contract value: {did}")
                 await self._process_value(did)  # Custom logic
             except Exception as e:
-                self.logger.error(f"Polling failed: {e}", exc_info=True)
+                # NOTE: uncomment this to reveal details about the revert reason
+                # self.logger.error(f"Polling failed: {e} > Trying again", exc_info=True)
+                did = contract_client.get_latest_value()
+                self.interval = int(contract_client.get_latest_interval())
+                self.logger.info(f"Latest DID: {did} at {self.interval}")
+                await self._process_value(did)
+
             await asyncio.sleep(self.interval)
 
     async def _process_value(self, value):

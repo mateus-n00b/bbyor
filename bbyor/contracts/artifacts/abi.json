@@ -30,7 +30,7 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "timestamp",
+				"name": "interval",
 				"type": "uint256"
 			}
 		],
@@ -65,7 +65,7 @@
 				"type": "string"
 			}
 		],
-		"name": "setPair",
+		"name": "registerPeer",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -74,6 +74,19 @@
 		"inputs": [],
 		"stateMutability": "nonpayable",
 		"type": "constructor"
+	},
+	{
+		"inputs": [],
+		"name": "getLastChosenPeer",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
 	},
 	{
 		"inputs": [],
@@ -103,12 +116,25 @@
 	},
 	{
 		"inputs": [],
-		"name": "totalEntries",
+		"name": "lowerBound",
 		"outputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "uint8",
 				"name": "",
-				"type": "uint256"
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "upperBound",
+		"outputs": [
+			{
+				"internalType": "uint8",
+				"name": "",
+				"type": "uint8"
 			}
 		],
 		"stateMutability": "view",
