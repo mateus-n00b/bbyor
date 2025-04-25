@@ -37,12 +37,15 @@ cc.Enable(PKESchemeFeature.ADVANCEDSHE)
 # print(f"Resultado de {a} - {b} = {pt_result.GetPackedValue()[0]}")
 
 def genKey() -> KeyPair:
-    return cc.keyGen()
+    return cc.KeyGen()
 
 # Pk should be pk.bin
 # Sk should be sk.bin
-def serializeKeyToFile(dest: str, key) -> None: 
-    SerializeToFile(settings.DEFAULT_DIR+"/"+dest, key, BINARY)
+def serializeKeyToFile(dest: str, key) -> None:
+    try: 
+        SerializeToFile(dest, key, BINARY)
+    except Exception as e:
+        raise e
 
 def loadPkFromFile(filename: str = settings.DEFAULT_DIR+"/pk.bin"):
     return DeserializePublicKey(filename, BINARY)

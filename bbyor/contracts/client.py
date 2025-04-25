@@ -32,10 +32,10 @@ class ContractClient:
     def get_peer(self):
         account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
         nonce = self.w3.eth.get_transaction_count(account.address)
-        tx = self.contract.functions.setRandomPeer().build_transaction({
+        tx = self.contract.functions.getRandomPeer().build_transaction({
             'from': account.address,
             'nonce': nonce,
-            'gas': 200000,
+            'gas': 300000,
             'gasPrice': self.w3.to_wei('10', 'gwei')
         })
         signed_tx = self.signtx(tx)

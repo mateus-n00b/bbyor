@@ -18,7 +18,7 @@ class ContractPoller:
         while not self._shutdown:
             try:
                 did, interval = contract_client.get_peer()
-                self.interval = int(interval)-1 # update interval
+                self.interval = int(interval)+1 # update interval
                 self.logger.info(f"Latest contract value: {did}")
                 await self._process_value(did)  # Custom logic
             except Exception as e:

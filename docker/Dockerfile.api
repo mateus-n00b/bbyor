@@ -45,9 +45,12 @@ RUN git clone https://github.com/openfheorg/openfhe-python.git \
 WORKDIR /openfhe-python
 RUN python3 setup.py sdist bdist_wheel && pip install dist/openfhe-*.whl
 RUN pip install "fastapi[standard]" web3 tenacity pydantic_settings python-json-logger
-# Now install aca-py
-RUN useradd bbyor
+# useradd doesnt creates /home
+# 
+RUN adduser bbyor 
 WORKDIR /app
 COPY bbyor /app 
-RUN chown -R bbyor:bbyor /app
+RUN chown -R bbyor:bbyor /app 
+RUN mkdir -p /home/bbyor/.config/bbyor && chown -R bbyor:bbyor /home/bbyor/
 USER bbyor
+# CMD ["fastapi", "dev" ,"main.py"]

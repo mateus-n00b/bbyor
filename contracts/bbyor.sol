@@ -68,6 +68,8 @@ contract BBYOR {
     // a logica do createChallengeNonce consiste em escolher um valor muito grande que deva ser somado com um valor escolhido pelo
     // peer -> o nonce eh publico
 
+
+
     function getRandom() private view returns (uint8) {
         require(upperBound > lowerBound, "upperBound must be greater than lowerBound");
         uint8 range = upperBound - lowerBound;
@@ -84,6 +86,7 @@ contract BBYOR {
        }
        lastChosenPeer = random;     
        lastRandomInterval = getRandom();  
+       lastTimestamp = block.timestamp; // <- ESSENCIAL!
        emit PeerSelected(peers[random], lastRandomInterval);
     } 
 

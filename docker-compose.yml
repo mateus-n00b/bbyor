@@ -1,118 +1,113 @@
 version: '3'
-services:
-  client:
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.api
-    network_mode: "host"
-    image: bbyor
 
+services:
   # nodes:
   #   image: bbyor
   #   command: ./scripts/start_nodes.sh
   #   environment:
-  #     - ACAPY_URL=http://localhost:8254
+  #     - ACAPY_URL=http://192.168.0.19:8254
   #     - PUBLIC_DID=18q1r8BkyTQLMKC7XxPuG
   #     - LOG_LEVEL=DEBUG
   #     - DEFAULT_DIR=${HOME:-/tmp}/.config/bbyor
-  #     - PROVIDER_URL=http://localhost:8545
+  #     - PROVIDER_URL=http://192.168.0.19:8545
   #     - GENESIS_FHE=./contracts/genesis_openfhe.json
-  #     - CONTRACT_ADDR=0x9A676e781A523b5d0C0e43731313A708CB607508
+  #     - CONTRACT_ADDR=0xD8a5a9b31c3C0232E196d518E89Fd8bF83AcAd43
   #     - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
   #   networks:
-  #     - von
+  #     - host
   #   ports:
   #     - 9701:9701
   #     - 9702:9702
   #   volumes:
-  #     - nodes-data:/home/api/.config/bbyor
+      # - nodes-data:/home/bbyor/.config/bbyor
 
   node1:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.api 
+    network_mode: host         
     image: bbyor
+    user: 1000:1000
     command: fastapi dev main.py
     environment:
-      - ACAPY_URL=http://localhost:8255
+      - ACAPY_URL=http://192.168.0.19:8254
       - PUBLIC_DID=18q1r8BkyTQLMKC7XxPuG
       - LOG_LEVEL=DEBUG
-      - DEFAULT_DIR=${HOME:-/tmp}/.config/bbyor
-      - PROVIDER_URL=http://localhost:8545
+      - DEFAULT_DIR=/home/bbyor/.config/bbyor
+      - PROVIDER_URL=http://192.168.0.19:8545
       - GENESIS_FHE=./contracts/genesis_openfhe.json
-      - CONTRACT_ADDR=0x9A676e781A523b5d0C0e43731313A708CB607508
+      - CONTRACT_ADDR=0xD8a5a9b31c3C0232E196d518E89Fd8bF83AcAd43
       - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-    networks:
-      - von
-    ports:
-      - 9701:9701
-      - 9702:9702
+    # networks:
+    #   - host    
     volumes:
-      - node1-data:/home/api/.config/bbyor
+      - nodeA-data:/home/bbyor/.config/bbyor
 
   node2:
     image: bbyor
+    user: 1000:1000
     command: fastapi dev main.py
     environment:
-      - ACAPY_URL=http://localhost:8445
+      - ACAPY_URL=http://192.168.0.19:8255
       - PUBLIC_DID=AQjRaYC89jBJL4e7SEYwaP
       - LOG_LEVEL=DEBUG
-      - DEFAULT_DIR=${HOME:-/tmp}/.config/bbyor
-      - PROVIDER_URL=http://localhost:8545
+      # - DEFAULT_DIR=${HOME:-/tmp}/.config/bbyor
+      - DEFAULT_DIR=/home/bbyor/.config/bbyor
+      - PROVIDER_URL=http://192.168.0.19:8545
       - GENESIS_FHE=./contracts/genesis_openfhe.json
-      - CONTRACT_ADDR=0x9A676e781A523b5d0C0e43731313A708CB607508
+      - CONTRACT_ADDR=0xD8a5a9b31c3C0232E196d518E89Fd8bF83AcAd43
       - PRIVATE_KEY=0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
-    networks:
-      - von
-    ports:
-      - 9703:9703
-      - 9704:9704
+    # networks:
+    #   - host
     volumes:
-      - node2-data:/home/api/.config/bbyor
+      - nodeB-data:/home/bbyor/.config/bbyor
 
   # node3:
   #   image: bbyor
   #   command: fastapi dev main.py
   #   environment:
-  #     - ACAPY_URL=http://localhost:8445
+  #     - ACAPY_URL=http://192.168.0.19:8445
   #     - PUBLIC_DID=NA
   #     - LOG_LEVEL=DEBUG
   #     - DEFAULT_DIR=${HOME:-/tmp}/.config/bbyor
-  #     - PROVIDER_URL=http://localhost:8545
+  #     - PROVIDER_URL=http://192.168.0.19:8545
   #     - GENESIS_FHE=./contracts/genesis_openfhe.json
-  #     - CONTRACT_ADDR=0x9A676e781A523b5d0C0e43731313A708CB607508
+  #     - CONTRACT_ADDR=0xD8a5a9b31c3C0232E196d518E89Fd8bF83AcAd43
   #     - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
   #   networks:
-  #     - von
+  #     - host
   #   ports:
   #     - 9705:9705
   #     - 9706:9706
   #   volumes:
-  #     - node3-data:/home/api/.config/bbyor
+  #     - node3-data:/home/bbyor/.config/bbyor
 
   # node4:
   #   image: bbyor
   #   command: fastapi dev main.py
   #   environment:
-  #     - ACAPY_URL=http://localhost:8445
+  #     - ACAPY_URL=http://192.168.0.19:8445
   #     - PUBLIC_DID=NA
   #     - LOG_LEVEL=DEBUG
   #     - DEFAULT_DIR=${HOME:-/tmp}/.config/bbyor
-  #     - PROVIDER_URL=http://localhost:8545
+  #     - PROVIDER_URL=http://192.168.0.19:8545
   #     - GENESIS_FHE=./contracts/genesis_openfhe.json
-  #     - CONTRACT_ADDR=0x9A676e781A523b5d0C0e43731313A708CB607508
+  #     - CONTRACT_ADDR=0xD8a5a9b31c3C0232E196d518E89Fd8bF83AcAd43
   #     - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
   #   networks:
-  #     - von
+  #     - host
   #   ports:
   #     - 9707:9707
   #     - 9708:9708
   #   volumes:
-  #     - node4-data:/home/api/.config/bbyor
+  #     - node4-data:/home/bbyor/.config/bbyor
 
-networks:
-  bbyor:
+# networks:
+#   host:
 
 volumes:
-  node1-data:
-  node2-data:
+  nodeA-data:
+  nodeB-data:
   # node3-data:
   # node4-data:
   # nodes-data:

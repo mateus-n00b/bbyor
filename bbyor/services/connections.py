@@ -31,12 +31,12 @@ def missing_conn() -> List[str]:
     """Identify missing connections with proper error handling"""
     try:
         with open(settings.GENESIS_FHE) as f:
-            peers = json.loads(f)    
+            peers = json.load(f)    
             connections_data = get_connections()
             if not connections_data:
                 return []
                 
-            existing_connections = [conn["their_did"] for conn in connections_data.get("results", [])]
+            existing_connections = [conn["their_public_did"] for conn in connections_data.get("results", [])]
             return [peer for peer in peers if peer not in existing_connections and peer != settings.PUBLIC_DID]
         
     except Exception as e:
@@ -81,7 +81,7 @@ def establish_connection(did: str) -> bool:
         logger.error(f"Failed to connect to {did}: {str(e)}")
         raise
 
-def handle_connections(peers: List[str]) -> dict:
+def handle_connections() -> dict:
     """
     Main workflow with proper status handling
     Returns:
@@ -91,15 +91,15 @@ def handle_connections(peers: List[str]) -> dict:
             "skipped": List[str]   # Already connected peers
         }
     """
-    if not peers:
-        return {"success": [], "failed": [], "skipped": []}
+    # if not peers:
+    #     return {"success": [], "failed": [], "skipped": []}
     
-    missing = missing_conn(peers)
+    missing = missing_conn()
     if not missing:
         logger.info("All peers are already connected")
-        return {"success": [], "failed": [], "skipped": peers.copy()}
+        return {"success": [], "failed": []}
     
-    results = {"success": [], "failed": [], "skipped": list(set(peers) - set(missing))}
+    results = {"success": [], "failed": []}
     
     for did in missing:
         if establish_connection(did):
@@ -109,7 +109,5 @@ def handle_connections(peers: List[str]) -> dict:
     
     logger.info(
         f"Connection results: {len(results['success'])} succeeded, "
-        f"{len(results['failed'])} failed, "
-        f"{len(results['skipped'])} already connected"
-    )
+        f"{len(results['failed'])} failed")
     return results

@@ -23,9 +23,9 @@
 		"inputs": [
 			{
 				"indexed": false,
-				"internalType": "uint8",
+				"internalType": "string",
 				"name": "peer",
-				"type": "uint8"
+				"type": "string"
 			},
 			{
 				"indexed": false,
@@ -51,28 +51,22 @@
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "something",
-				"type": "string"
-			}
-		],
-		"name": "setPair",
+		"inputs": [],
+		"name": "getRandomPeer",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "setRandomPeer",
-		"outputs": [
+		"inputs": [
 			{
-				"internalType": "uint8",
-				"name": "",
-				"type": "uint8"
+				"internalType": "string",
+				"name": "did",
+				"type": "string"
 			}
 		],
+		"name": "setPair",
+		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
@@ -89,19 +83,6 @@
 				"internalType": "address",
 				"name": "",
 				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getRandomPeer",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
