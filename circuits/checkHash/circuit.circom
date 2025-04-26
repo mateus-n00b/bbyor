@@ -6,19 +6,17 @@ template Verify () {
     signal input nonce;
     // md5 do resultado
     signal input result;
-    signal input c;
+    signal output c;    
     
     // var unused = 4;
     // c <== a * b;
     // assert(a > 2);
     
     component hash = Poseidon(2);
-    hash.inputs[0] <== result;
-    hash.inputs[1] <== nonce;
+    hash.inputs[0] <== nonce;
+    hash.inputs[1] <== result;
 
-    c === hash.out;
-
-    // log("hash", hash.out);
+    c <== hash.out;
 }
 
 component main = Verify();
