@@ -89,3 +89,10 @@ snarkjs groth16 prove circuit2_0001.zkey witness.wtns proof.json public.json
 snarkjs wtns calculate circuit.wasm input.json witness.wtns
  snarkjs generatecall
   -->
+
+<!-- decode hex
+decoded_values = [int(x, 16) for x in values]
+
+for value in decoded_values:
+    print(value)
+ -->

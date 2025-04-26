@@ -6,7 +6,7 @@ from signal import SIGINT, SIGTERM
 from ..contracts.client import contract_client
 from ..config.settings import settings
 from ..services.challenge import propose_challenge
-from ..services.connections import establish_connection
+from ..services.connections import establish_connection, get_connections
 
 class ContractPoller:
     def __init__(self, interval_sec: int = 30):
@@ -41,7 +41,10 @@ class ContractPoller:
         else:
             # Do I know this DID? If not, connect 
             # NOTE: implement some kind of flag to this (AUTO_CONNECT = True)
-            establish_connection(did)
+            # Problem: acapy doesnt prevent redudant connections
+            my_connections = get_connections()["results"]
+            if did not in str(my_connections):
+                establish_connection(did)
 
     def shutdown(self):
         """Graceful shutdown"""
