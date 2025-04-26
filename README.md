@@ -63,3 +63,29 @@ aca-py start --inbound-transport http 0.0.0.0 8155  --outbound-transport ws --ou
 
 
 Refer to: docker pull ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
+
+<!-- find . -name "*.circom" | xargs -i sed -i 's/pragma circom 2\.0\.0;//g' {} -->
+<!-- def string_to_integer(s):
+    return int.from_bytes(s.encode(), 'big') -->
+<!-- tar -czvf circuit_bundle.tar.gz circuit.wasm circuit.r1cs final.zkey -->
+
+<!-- compile circuit -->
+<!--  2307  circom --wasm --r1cs
+ 2308  snarkjs wtns calculate circuit.wasm input.json witness.wtns
+ 2309  snarkjs powersoftau new bn128 12 pot12_0000.ptau -v
+ 2310  snarkjs powersoftau contribute pot12_0000.ptau pot12_0001.ptau
+ 2311  snarkjs powersoftau contribute pot12_0000.ptau pot12_0001.ptau <<< ASKASaSKAKSDAKDKAKDKAD
+ 2312  snarkjs powersoftau new bn128 12 pot12_0000.ptau -v
+ 2313  snarkjs powersoftau contribute pot12_0000.ptau pot12_0001.ptau --name="First contribution" -v
+ 2314  snarkjs powersoftau prepare phase2 pot12_0001.ptau pot12_final.ptau -v
+ 2315  snarkjs groth16 setup circuit.r1cs pot12_final.ptau circuit2_0000.zkey
+ 2316  snarkjs zkey contribute circuit2_0000.zkey circuit2_0001.zkey --name="1st Contributor Name" -v
+ 2317  snarkjs zkey export verificationkey circuit2_0001.zkey verification_key.json
+ 2319  snarkjs zkey export solidityverifier circuit2_0001.zkey verifier.sol -->
+
+ <!-- Para provar 
+ basta calcular as wtns 
+snarkjs groth16 prove circuit2_0001.zkey witness.wtns proof.json public.json
+snarkjs wtns calculate circuit.wasm input.json witness.wtns
+ snarkjs generatecall
+  -->
