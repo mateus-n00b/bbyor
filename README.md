@@ -96,3 +96,5 @@ decoded_values = [int(x, 16) for x in values]
 for value in decoded_values:
     print(value)
  -->
+
+ <!-- snarkjs wtns calculate circuit.wasm input.json witness.wtns &&  snarkjs groth16 prove circuit2_0001.zkey witness.wtns proof.json public.json -->
