@@ -5,11 +5,7 @@ template Example () {
     // md5 do resultado
     signal private input result;
     signal input nonce;
-    signal output c;
-    
-    // var unused = 4;
-    // c <== a * b;
-    // assert(a > 2);
+    signal output c;    
     
     component hash = Poseidon(2);
     hash.inputs[0] <== result;
