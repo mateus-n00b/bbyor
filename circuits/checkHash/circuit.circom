@@ -7,6 +7,8 @@ template Verify () {
     signal input nonce;
     // md5 do resultado
     signal input result;
+    // did should be converted to int
+    signal input in_did;
     signal output c;    
 
     component hash = Poseidon(2);

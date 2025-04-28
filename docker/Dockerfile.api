@@ -2,7 +2,7 @@
 FROM ubuntu:22.04
 
 # Set environment variables to non-interactive (this prevents some prompts)
-ENV DEBIAN_FRONTEND=noninteractive
+# ENV DEBIAN_FRONTEND=noninteractive
 
 # Install necessary dependencies for OpenFHE and JupyterLab
 RUN apt-get update && apt-get install -y \
@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-venv \
     sudo \
-    npm \
+    curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PyBind11
@@ -47,13 +47,24 @@ WORKDIR /openfhe-python
 RUN python3 setup.py sdist bdist_wheel && pip install dist/openfhe-*.whl
 RUN pip install "fastapi[standard]" web3 tenacity pydantic_settings python-json-logger
 # For tests
-RUN npm i -g snarkjs
 # useradd doesnt creates /home
-# 
 RUN adduser bbyor 
-WORKDIR /app
-COPY bbyor /app 
-RUN chown -R bbyor:bbyor /app 
+
+ENV PATH="/home/bbyor/nodejs/bin:${PATH}"
 RUN mkdir -p /home/bbyor/.config/bbyor && chown -R bbyor:bbyor /home/bbyor/
+
 USER bbyor
+
+# Download and extract Node.js directly
+WORKDIR /home/bbyor
+RUN curl -sL https://nodejs.org/dist/v22.15.0/node-v22.15.0-linux-x64.tar.xz | tar -xJ \
+    && mv node-v22.15.0-linux-x64 nodejs \
+    && mkdir -p ~/.npm \
+    && ~/nodejs/bin/npm install -g snarkjs
+
+COPY --chown=bbyor:bbyor bbyor circuits $HOME/app/ 
+# RUN chown -R bbyor:bbyor $HOME/app/
+
+WORKDIR /app
+
 # CMD ["fastapi", "dev" ,"main.py"]

@@ -8,4 +8,5 @@ snarkjs zkey contribute circuit2_0000.zkey circuit2_0001.zkey --name="1st Contri
 snarkjs zkey export verificationkey circuit2_0001.zkey verification_key.json && \
 snarkjs zkey export solidityverifier circuit2_0001.zkey verifier.sol && \
 snarkjs groth16 prove circuit2_0001.zkey witness.wtns proof.json public.json && \
+snarkjs groth16 verify verification_key.json public.json proof.json && \
 snarkjs generatecall

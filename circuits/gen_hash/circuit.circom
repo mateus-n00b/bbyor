@@ -1,7 +1,7 @@
 include "../circomlib/circuits/poseidon.circom";
 // include "https://github.com/0xPARC/circom-secp256k1/blob/master/circuits/bigint.circom";
 
-template Example () {
+template GenHash () {
     // md5 do resultado
     signal private input result;
     signal input nonce;
@@ -14,4 +14,4 @@ template Example () {
     c <== hash.out;
 }
 
-component main = Example();
+component main = GenHash();

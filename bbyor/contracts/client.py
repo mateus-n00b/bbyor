@@ -54,6 +54,8 @@ class ContractClient:
             print("No nonce event found")
         return nonce
 
+    def verify(self, proof):
+        return self.contract.functions.verifyProof(proof[0], proof[1], proof[2], proof[3]).call()
 
     def get_peer(self):
         account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)

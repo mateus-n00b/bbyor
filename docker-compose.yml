@@ -5,13 +5,13 @@ services:
   #   image: bbyor
   #   command: ./scripts/start_nodes.sh
   #   environment:
-  #     - ACAPY_URL=http://192.168.0.19:8254
+  #     - ACAPY_URL=http://192.168.15.21:8254
   #     - PUBLIC_DID=18q1r8BkyTQLMKC7XxPuG
   #     - LOG_LEVEL=DEBUG
   #     - DEFAULT_DIR=${HOME:-/tmp}/.config/bbyor
-  #     - PROVIDER_URL=http://192.168.0.19:8545
+  #     - PROVIDER_URL=http://192.168.15.21:8545
   #     - GENESIS_FHE=./contracts/genesis_openfhe.json
-  #     - CONTRACT_ADDR=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+  #     - CONTRACT_ADDR=0x1343248Cbd4e291C6979e70a138f4c774e902561
   #     - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
   #   networks:
   #     - bbyor
@@ -30,13 +30,13 @@ services:
     user: 1000:1000
     command: fastapi dev main.py --host 0.0.0.0 --port 8000
     environment:
-      - ACAPY_URL=http://192.168.0.19:8254
+      - ACAPY_URL=http://192.168.15.21:8254
       - PUBLIC_DID=18q1r8BkyTQLMKC7XxPuG
       - LOG_LEVEL=DEBUG
       - DEFAULT_DIR=/home/bbyor/.config/bbyor
-      - PROVIDER_URL=http://192.168.0.19:8545
+      - PROVIDER_URL=http://192.168.15.21:8545
       - GENESIS_FHE=./contracts/genesis_openfhe.json
-      - CONTRACT_ADDR=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+      - CONTRACT_ADDR=0x1343248Cbd4e291C6979e70a138f4c774e902561
       - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
     networks:
       - bbyor 
@@ -50,14 +50,14 @@ services:
     user: 1000:1000
     command: fastapi dev main.py --host 0.0.0.0
     environment:
-      - ACAPY_URL=http://192.168.0.19:8255
+      - ACAPY_URL=http://192.168.15.21:8255
       - PUBLIC_DID=AQjRaYC89jBJL4e7SEYwaP
       - LOG_LEVEL=DEBUG
       # - DEFAULT_DIR=${HOME:-/tmp}/.config/bbyor
       - DEFAULT_DIR=/home/bbyor/.config/bbyor
-      - PROVIDER_URL=http://192.168.0.19:8545
+      - PROVIDER_URL=http://192.168.15.21:8545
       - GENESIS_FHE=./contracts/genesis_openfhe.json
-      - CONTRACT_ADDR=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+      - CONTRACT_ADDR=0x1343248Cbd4e291C6979e70a138f4c774e902561
       - PRIVATE_KEY=0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
     networks:
       - bbyor
@@ -70,13 +70,13 @@ services:
   #   image: bbyor
   #   command: fastapi dev main.py
   #   environment:
-  #     - ACAPY_URL=http://192.168.0.19:8445
+  #     - ACAPY_URL=http://192.168.15.21:8445
   #     - PUBLIC_DID=NA
   #     - LOG_LEVEL=DEBUG
   #     - DEFAULT_DIR=${HOME:-/tmp}/.config/bbyor
-  #     - PROVIDER_URL=http://192.168.0.19:8545
+  #     - PROVIDER_URL=http://192.168.15.21:8545
   #     - GENESIS_FHE=./contracts/genesis_openfhe.json
-  #     - CONTRACT_ADDR=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+  #     - CONTRACT_ADDR=0x1343248Cbd4e291C6979e70a138f4c774e902561
   #     - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
   #   networks:
   #     - bbyor
@@ -90,13 +90,13 @@ services:
   #   image: bbyor
   #   command: fastapi dev main.py
   #   environment:
-  #     - ACAPY_URL=http://192.168.0.19:8445
+  #     - ACAPY_URL=http://192.168.15.21:8445
   #     - PUBLIC_DID=NA
   #     - LOG_LEVEL=DEBUG
   #     - DEFAULT_DIR=${HOME:-/tmp}/.config/bbyor
-  #     - PROVIDER_URL=http://192.168.0.19:8545
+  #     - PROVIDER_URL=http://192.168.15.21:8545
   #     - GENESIS_FHE=./contracts/genesis_openfhe.json
-  #     - CONTRACT_ADDR=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+  #     - CONTRACT_ADDR=0x1343248Cbd4e291C6979e70a138f4c774e902561
   #     - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
   #   networks:
   #     - bbyor
