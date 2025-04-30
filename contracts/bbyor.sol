@@ -6,6 +6,9 @@ import { DidRecord } from "./BBYORTypes.sol";
 /**
  * @title BBYOR
  * @dev Manage owner, peers, and pseudo-random peer selection
+ * TODO: avoid replay attacks with old proofs
+ * set a ceil to reputation and a decrement function 
+ * 
  */
 contract BBYOR {
     // Events
@@ -69,7 +72,7 @@ contract BBYOR {
         else{
             uint256 reward = multiply(divide(recv, n_nodes), increase_factor);
             rep += reward;
-            
+
             peerRecords[did].serverRep = rep;
             emit RepIncreased(rep);
         }
@@ -259,7 +262,8 @@ contract BBYOR {
     uint16 constant pPairing = 128;
 
     uint16 constant pLastMem = 896;
-    // Reputation logic here
+    // Insert a require(onlyServer) here 
+    // Avoid reusing nonce, but how?  
     function verifyProof(uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[4] calldata _pubSignals) public view returns (bool result) {
         assembly {
             function checkField(v) {
@@ -377,7 +381,6 @@ contract BBYOR {
             // Validate all evaluations
             let isValid := checkPairing(_pA, _pB, _pC, _pubSignals, pMem)            
             result := isValid
-            // Uncoment this line to have the regular behaviour
             // mstore(0, isValid)
             //  return(0, 0x20)
          }
