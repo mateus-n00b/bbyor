@@ -44,7 +44,9 @@ class ContractPoller:
             # Problem: acapy doesnt prevent redudant connections
             my_connections = get_connections()["results"]
             if did not in str(my_connections):
-                establish_connection(did)
+                if establish_connection(did):
+                    self.logger.info("Registering neighbor...")
+                    contract_client.register_neighbor(did)
 
     def shutdown(self):
         """Graceful shutdown"""

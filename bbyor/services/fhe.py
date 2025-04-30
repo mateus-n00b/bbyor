@@ -72,7 +72,7 @@ def evalAdd(valueA: Ciphertext, valueB: int):
 
 def encrypt(value: int) -> Ciphertext:
     pk_a = makePackedList(value)    
-    cc.EvalSumKeyGen(loadSkFromFile())
+    # cc.EvalSumKeyGen(loadSkFromFile())
     a = cc.Encrypt(loadPkFromFile(), pk_a)
     
     return a

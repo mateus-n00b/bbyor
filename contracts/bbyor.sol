@@ -12,10 +12,18 @@ contract BBYOR {
     event OwnerSet(address indexed oldOwner, address indexed newOwner);
     event PeerSelected(string peer, uint256 interval);
     event NonceCreated(uint256 nonce, address did);
+    event Reduced(uint256 a);
+    event RepIncreased(uint256 newRep);
+    event VerifiedProof(string did, bool verified);
 
     // Structs
     struct User {
-        bytes32 name;
+        bytes32 did;
+        uint256 serverRep;
+        uint256 clientRep; 
+        mapping (string did => bool) neighbors; 
+        uint256 n_neighbors; 
+        uint256 updated;
     }
 
     // State Variables
@@ -28,8 +36,49 @@ contract BBYOR {
     uint256 public lastRandomInterval;
     uint256 public lastNonce;
 
-    uint8 public upperBound = 20;
-    uint8 public lowerBound = 10;
+    uint8 private upperBound = 20;
+    uint8 private lowerBound = 10;
+
+    // Reputation Variables
+    uint256 constant SCALE = 1000; // 3 casas decimais 
+    uint256 constant increase_factor = 30; // 0.05%
+    uint256 constant decrease_factor = 50; // 0.05%
+    uint256 private initial_rep = 350; // 35%
+    uint256 private total_verified = 0;
+
+     // Multiplicação: (a * b) / SCALE
+    function multiply(uint256 a, uint256 b) internal pure returns (uint256) {
+        return (a * b) / SCALE;
+    }
+
+    // Divisão: (a * SCALE) / b
+    function divide(uint256 a, uint256 b) internal  pure returns (uint256) {
+        return (a * SCALE) / b;
+    }
+
+    function update_server_rep(string memory did, uint recv) private  {
+        uint256 rep = peerRecords[did].serverRep;         
+        uint256 n_nodes = peerRecords[did].n_neighbors;
+        if (recv < multiply(n_nodes, divide(2, 3))){
+            uint256 penalty = divide((n_nodes - recv), decrease_factor);
+            rep = (penalty >= rep) ? 0 : rep - penalty;
+
+            peerRecords[did].serverRep = rep;
+            emit Reduced(rep);
+        }
+        else{
+            uint256 reward = multiply(divide(recv, n_nodes), increase_factor);
+            rep += reward;
+            
+            peerRecords[did].serverRep = rep;
+            emit RepIncreased(rep);
+        }
+        peerRecords[did].updated = block.timestamp;
+    }
+
+    // function update_client_rep(string memory did, uint256 finish_time) private{
+
+    // }
 
     // Modifiers
     modifier onlyOwner() {
@@ -64,7 +113,10 @@ contract BBYOR {
     // Peer Management
     function registerPeer(string calldata did) external {
         require(bytes(did).length > 0, "DID cannot be empty");
-        peerRecords[did].name = keccak256(abi.encodePacked(did));
+        peerRecords[did].did = keccak256(abi.encodePacked(did));
+        peerRecords[did].serverRep = initial_rep;
+        peerRecords[did].clientRep = initial_rep;
+        peerRecords[did].updated = block.timestamp;
         peers.push(did);
     }
 
@@ -78,6 +130,14 @@ contract BBYOR {
     function getRandomPeer() external {
         require(peers.length > 1, "At least two peers are required");
         require(block.timestamp - lastTimestamp > lastRandomInterval, "Too early to select again");
+
+        // update rep?
+        // not first run?
+        if (lastChosenPeerIndex != type(uint256).max){
+            update_server_rep(peers[lastChosenPeerIndex], total_verified);
+        }
+        // reset 
+        total_verified = 0;
 
         uint256 newIndex = _generateRandomIndex(peers.length);
 
@@ -104,7 +164,38 @@ contract BBYOR {
         return uint8(uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % range) + lowerBound;
     }
 
-    // SPDX-License-Identifier: GPL-3.0
+    // In the future I need add the isDidOwner modifier
+    function registerNeighbor(string memory did, string memory did_neighbor) public returns (bool){
+        require(!peerRecords[did].neighbors[did_neighbor], "Neighbor already registered!");            
+        peerRecords[did].neighbors[did_neighbor] = true;
+        peerRecords[did].n_neighbors += 1;
+        return true;                        
+    }
+
+    function isNeighbor(string memory did, string memory did_neighbor) public view returns(bool){
+        return peerRecords[did].neighbors[did_neighbor];
+    }
+
+    function getReputation(string memory did) public view returns (uint) {
+        return peerRecords[did].serverRep; 
+    }
+
+    function registerResult(string memory did, uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[4] calldata _pubSignals) external  {
+            require(peerRecords[did].did != peerRecords[peers[lastChosenPeerIndex]].did, "Only clients can register results");            
+            string memory serverDID = peers[lastChosenPeerIndex];
+            if (!peerRecords[serverDID].neighbors[did]){
+                peerRecords[serverDID].neighbors[did] = true;
+                peerRecords[serverDID].n_neighbors += 1;
+            }
+            bool isVerified = verifyProof(_pA, _pB, _pC, _pubSignals);
+            emit VerifiedProof(did, isVerified); 
+            if (isVerified){
+                total_verified += 1;  
+                emit VerifiedProof(did, true);                
+            }else{
+            emit VerifiedProof(did, false);            
+            }
+    }
 /*
     Copyright 2021 0KIMS association.
 
@@ -168,8 +259,8 @@ contract BBYOR {
     uint16 constant pPairing = 128;
 
     uint16 constant pLastMem = 896;
-
-    function verifyProof(uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[4] calldata _pubSignals) public view returns (bool) {
+    // Reputation logic here
+    function verifyProof(uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[4] calldata _pubSignals) public view returns (bool result) {
         assembly {
             function checkField(v) {
                 if iszero(lt(v, r)) {
@@ -284,10 +375,11 @@ contract BBYOR {
             
 
             // Validate all evaluations
-            let isValid := checkPairing(_pA, _pB, _pC, _pubSignals, pMem)
-
-            mstore(0, isValid)
-             return(0, 0x20)
+            let isValid := checkPairing(_pA, _pB, _pC, _pubSignals, pMem)            
+            result := isValid
+            // Uncoment this line to have the regular behaviour
+            // mstore(0, isValid)
+            //  return(0, 0x20)
          }
      }
  }

@@ -4,6 +4,7 @@ from typing import List, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
 from ..config.settings import settings
 from ..utils.logging import get_logger
+from ..contracts.client import contract_client
 
 logger = get_logger()
 
@@ -103,7 +104,9 @@ def handle_connections() -> dict:
     
     for did in missing:
         if establish_connection(did):
-            results["success"].append(did)
+            results["success"].append(did)   
+            # register neighbors
+            contract_client.register_neighbor(did)
         else:
             results["failed"].append(did)
     

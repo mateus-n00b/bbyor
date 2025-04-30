@@ -98,3 +98,20 @@ for value in decoded_values:
  -->
 
  <!-- snarkjs wtns calculate circuit.wasm input.json witness.wtns &&  snarkjs groth16 prove circuit2_0001.zkey witness.wtns proof.json public.json -->
+
+ <!-- EvalAdd = "Somar ciphertext A + ciphertext B" (são duas variáveis)
+
+EvalSum = "Dentro de ciphertext A, some todos os valores internos (nos slots)" -->
+
+<!-- from itertools import combinations
+
+# Lista de participantes
+participants = ['A', 'B', 'C', 'D', 'E']
+
+# Gerar todas as combinações de 4
+groups = list(combinations(participants, 4))
+
+# Exibir os grupos
+for idx, group in enumerate(groups, start=1):
+    print(f"Grupo {idx}: {group}")
+ -->

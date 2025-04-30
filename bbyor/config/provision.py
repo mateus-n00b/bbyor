@@ -24,7 +24,8 @@ def provision() -> Optional[Tuple[Path, Path]]:
         # I dont think this gonna work
         # settings.PUBLIC_DID != did
         # Establish connections        
-        handle_connections()
+        handle_connections()                        
+
         # Create FHE keys
         # Convert to Path objects (more robust than string paths)
         config_dir = Path(settings.DEFAULT_DIR)

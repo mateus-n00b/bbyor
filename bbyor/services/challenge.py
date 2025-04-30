@@ -78,6 +78,10 @@ def handle_challenge(body, msg):
     logger.info(f"Sending ADD result hash {hash} to {conn_id} with proof: {proof}")        
     body = {"type": "fhe_result", "proof": proof}
     send_message(conn_id, body)
+    proof_fixed = hex_to_int(proof)
+    verified = contract_client.register_result(proof_fixed)
+    if  verified:
+        logger.info("Result registered successfully!!!!")
 
 def handle_result(body, msg):
     conn_id = body["connection_id"]
@@ -87,5 +91,7 @@ def handle_result(body, msg):
 
     logger.info(f"Received result from {conn_id} -> {proof_fixed} == {_hash}")
     verified = contract_client.verify(proof_fixed)
+    # Changed to register_result, which updates reputation
+    # verified = contract_client.register_result(proof_fixed)
     if  verified:
         logger.info("SUCCESS!!!!")
