@@ -36,7 +36,7 @@ contract BBYOR {
 
     uint256 private lastChosenPeerIndex = type(uint256).max;
     uint256 private lastTimestamp;
-    uint256 public lastRandomInterval;
+    uint256 private lastRandomInterval;
     uint256 public lastNonce;
 
     uint8 private upperBound = 20;
@@ -48,6 +48,7 @@ contract BBYOR {
     uint256 constant decrease_factor = 50; // 0.05%
     uint256 private initial_rep = 350; // 35%
     uint256 private total_verified = 0;
+    
 
      // Multiplicação: (a * b) / SCALE
     function multiply(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -59,22 +60,40 @@ contract BBYOR {
         return (a * SCALE) / b;
     }
 
-    function update_server_rep(string memory did, uint recv) private  {
+    function updateServerRep() public  {        
+         // update rep?
+        // not first run?
+        require(lastChosenPeerIndex != type(uint256).max, "No peer selected yet!");
+        // require(n_nodes <= 0, "Number of neighbors should be greater than 0");
+        require(block.timestamp - lastTimestamp > lastRandomInterval, "Challenge is still happening...");
+        string memory did = peers[lastChosenPeerIndex];
+        uint256 recv = total_verified;
         uint256 rep = peerRecords[did].serverRep;         
         uint256 n_nodes = peerRecords[did].n_neighbors;
+
+        if (n_nodes == 0){
+            n_nodes = 1;
+        }
+
+        if (recv == 0){
+            uint256 penalty = multiply(n_nodes, decrease_factor);
+            rep = (penalty >= rep) ? 0 : rep - penalty * n_nodes;
+            // emit Reduced(rep);
+        }
+
         if (recv < multiply(n_nodes, divide(2, 3))){
             uint256 penalty = divide((n_nodes - recv), decrease_factor);
             rep = (penalty >= rep) ? 0 : rep - penalty;
 
             peerRecords[did].serverRep = rep;
-            emit Reduced(rep);
+            // emit Reduced(rep);
         }
         else{
             uint256 reward = multiply(divide(recv, n_nodes), increase_factor);
             rep += reward;
 
             peerRecords[did].serverRep = rep;
-            emit RepIncreased(rep);
+            // emit RepIncreased(rep);
         }
         peerRecords[did].updated = block.timestamp;
     }
@@ -129,16 +148,17 @@ contract BBYOR {
         return peers[lastChosenPeerIndex];
     }
 
+    function getRemainingTime() public view returns (uint) {
+            // remaining time
+            return lastRandomInterval;
+    }
+
     // Peer Selection
     function getRandomPeer() external {
         require(peers.length > 1, "At least two peers are required");
-        require(block.timestamp - lastTimestamp > lastRandomInterval, "Too early to select again");
+        // 2 seconds to process the reputation
+        require(block.timestamp - lastTimestamp > lastRandomInterval+2, "Too early to select again");
 
-        // update rep?
-        // not first run?
-        if (lastChosenPeerIndex != type(uint256).max){
-            update_server_rep(peers[lastChosenPeerIndex], total_verified);
-        }
         // reset 
         total_verified = 0;
 

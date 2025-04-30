@@ -49,53 +49,54 @@ services:
     volumes:
       - agent2-data:/home/aries/.acapy_agent
 
-  # agent3: 
-  #   image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
-  #   command: >-
-  #     start --inbound-transport http 0.0.0.0 8157 --outbound-transport http --log-level error
-  #     --endpoint http://${HOST_IP}:8157 --label AGENT3 --seed 60b725f10c9c85c70d97880dfe8191b3
-  #     --genesis-url http://${HOST_IP}:9000/genesis
-  #     --ledger-pool-name localindypool --wallet-key 123456
-  #     --wallet-name bancoumwallet6 --wallet-type askar-anoncreds
-  #     --admin 0.0.0.0 8256
-  #     --admin-insecure-mode
-  #     --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection
-  #     --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request
-  #     --auto-store-credential --auto-respond-presentation-proposal --auto-respond-credential-request
-  #     --auto-respond-credential-proposal --debug-connections --debug-credentials --debug-presentations
-  #     --auto-provision --requests-through-public-did --admin-client-max-request-size 10
-  #     --webhook-url http://${HOST_IP}:8003 --max-message-size 3097152
-  #   ports:
-  #     - 8256:8256
-  #     - 8157:8157
-  #   networks:
-  #     - bbyor
-  #   volumes:
-  #     - agent3-data:/home/aries/.acapy_agent
+  agent3: 
+    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
+    command: >-
+      start --inbound-transport http 0.0.0.0 8157 --outbound-transport http --log-level error
+      --endpoint http://${HOST_IP}:8157 --label AGENT3 --seed 60b725f10c9c85c70d97880dfe8191b3
+      --genesis-url http://${HOST_IP}:9000/genesis
+      --ledger-pool-name localindypool --wallet-key 123456
+      --wallet-name bancoumwallet6 --wallet-type askar-anoncreds
+      --admin 0.0.0.0 8256
+      --admin-insecure-mode
+      --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection
+      --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request
+      --auto-store-credential --auto-respond-presentation-proposal --auto-respond-credential-request
+      --auto-respond-credential-proposal --debug-connections --debug-credentials --debug-presentations
+      --auto-provision --requests-through-public-did --admin-client-max-request-size 10
+      --webhook-url http://${HOST_IP}:8003 --max-message-size 3097152
+    ports:
+      - 8256:8256
+      - 8157:8157
+    networks:
+      - bbyor
+    volumes:
+      - agent3-data:/home/aries/.acapy_agent
 
-  # agent4: 
-  #   image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
-  #   command: >-
-  #     start --inbound-transport http 0.0.0.0 8158 --outbound-transport http --log-level error
-  #     --endpoint http://${HOST_IP}:8158 --label AGENT4 --seed 3b5d5c3712955042212316173ccf37be
-  #     --genesis-url http://${HOST_IP}:9000/genesis
-  #     --ledger-pool-name localindypool --wallet-key 123456
-  #     --wallet-name bancoumwallet6 --wallet-type askar-anoncreds
-  #     --admin 0.0.0.0 8257
-  #     --admin-insecure-mode
-  #     --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection
-  #     --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request
-  #     --auto-store-credential --auto-respond-presentation-proposal --auto-respond-credential-request
-  #     --auto-respond-credential-proposal --debug-connections --debug-credentials --debug-presentations
-  #     --auto-provision --requests-through-public-did --admin-client-max-request-size 10
-  #     --webhook-url http://${HOST_IP}:8004 --max-message-size 3097152
-  #   ports:
-  #     - 8257:8257
-  #     - 8158:8158
-  #   networks:
-  #     - bbyor
-  #   volumes:
-  #     - agent4-data:/home/aries/.acapy_agent
+  agent4: 
+    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
+    command: >-
+      start --inbound-transport http 0.0.0.0 8158 --outbound-transport http --log-level error
+      --endpoint http://${HOST_IP}:8158 --label AGENT4 --seed 3b5d5c3712955042212316173ccf37be
+      --genesis-url http://${HOST_IP}:9000/genesis
+      --ledger-pool-name localindypool --wallet-key 123456
+      --wallet-name bancoumwallet6 --wallet-type askar-anoncreds
+      --admin 0.0.0.0 8257
+      --admin-insecure-mode
+      --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection
+      --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request
+      --auto-store-credential --auto-respond-presentation-proposal --auto-respond-credential-request
+      --auto-respond-credential-proposal --debug-connections --debug-credentials --debug-presentations
+      --auto-provision --requests-through-public-did --admin-client-max-request-size 10
+      --webhook-url http://${HOST_IP}:8004 --max-message-size 3097152
+    ports:
+      - 8257:8257
+      - 8158:8158
+    networks:
+      - bbyor
+    volumes:
+      - agent4-data:/home/aries/.acapy_agent
+  
   node1:
     build:
       context: .
@@ -144,48 +145,51 @@ services:
     depends_on:
       - agent2
 
-  # node3:
-  #   image: bbyor
-  #   user: 1000:1000
-  #   command: fastapi dev main.py --host 0.0.0.0
-  #   environment:
-  #     - ACAPY_URL=http://${HOST_IP}:8256
-  #     - PUBLIC_DID=BBRiaUGLudKRKJCGU8GoW1
-  #     - LOG_LEVEL=DEBUG
-  #     - DEFAULT_DIR=/home/bbyor/.config/bbyor
-  #     - PROVIDER_URL=http://${HOST_IP}:8545
-  #     - GENESIS_FHE=./contracts/genesis_openfhe.json
-  #     - CONTRACT_ADDR=${CONTRACT_ADDR}
-  #     - PRIVATE_KEY=0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
-  #   networks:
-  #     - bbyor
-  #   ports:
-  #     - 8003:8000
-  #   volumes:
-  #     - node3-data:/home/bbyor/.config/bbyor
-  #   depends_on:
-  #   - agent4
-  # node4:
-  #   image: bbyor
-  #   user: 1000:1000
-  #   command: fastapi dev main.py --host 0.0.0.0
-  #   environment:
-  #     - ACAPY_URL=http://${HOST_IP}:8257
-  #     - PUBLIC_DID=Bnj3a8v8QAasGgEkLeG4kM
-  #     - LOG_LEVEL=DEBUG
-  #     - DEFAULT_DIR=/home/bbyor/.config/bbyor
-  #     - PROVIDER_URL=http://${HOST_IP}:8545
-  #     - GENESIS_FHE=./contracts/genesis_openfhe.json
-  #     - CONTRACT_ADDR=${CONTRACT_ADDR}
-  #     - PRIVATE_KEY=0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
-  #   networks:
-  #     - bbyor
-  #   ports:
-  #     - 8004:8000
-  #   volumes:
-  #     - node4-data:/home/bbyor/.config/bbyor
-  #   depends_on:
-  #     - agent4
+  node3:
+    image: bbyor
+    user: 1000:1000
+    command: fastapi dev main.py --host 0.0.0.0
+    environment:
+      - ACAPY_URL=http://${HOST_IP}:8256
+      - PUBLIC_DID=BBRiaUGLudKRKJCGU8GoW1
+      - LOG_LEVEL=DEBUG
+      - DEFAULT_DIR=/home/bbyor/.config/bbyor
+      - PROVIDER_URL=http://${HOST_IP}:8545
+      - GENESIS_FHE=./contracts/genesis_openfhe.json
+      - CONTRACT_ADDR=${CONTRACT_ADDR}
+      - PRIVATE_KEY=0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
+      - HOST_BEHAVIOUR=1
+    networks:
+      - bbyor
+    ports:
+      - 8003:8000
+    volumes:
+      - node3-data:/home/bbyor/.config/bbyor
+    depends_on:
+    - agent4
+
+  node4:
+    image: bbyor
+    user: 1000:1000
+    command: fastapi dev main.py --host 0.0.0.0
+    environment:
+      - ACAPY_URL=http://${HOST_IP}:8257
+      - PUBLIC_DID=Bnj3a8v8QAasGgEkLeG4kM
+      - LOG_LEVEL=DEBUG
+      - DEFAULT_DIR=/home/bbyor/.config/bbyor
+      - PROVIDER_URL=http://${HOST_IP}:8545
+      - GENESIS_FHE=./contracts/genesis_openfhe.json
+      - CONTRACT_ADDR=${CONTRACT_ADDR}
+      - PRIVATE_KEY=0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
+      - HOST_BEHAVIOUR=2
+    networks:
+      - bbyor
+    ports:
+      - 8004:8000
+    volumes:
+      - node4-data:/home/bbyor/.config/bbyor
+    depends_on:
+      - agent4
 
 networks:
   bbyor:
@@ -193,10 +197,10 @@ networks:
 volumes:
   nodeA-data:
   nodeB-data:
-  # node3-data:
-  # node4-data:
+  node3-data:
+  node4-data:
   agent1-data:
   agent2-data:
-  # agent3-data:
-  # agent4-data:
+  agent3-data:
+  agent4-data:
   

@@ -19,6 +19,11 @@ class Settings(BaseSettings):
         description="Agent's public did",
         env="PUBLIC_DID"
     )
+    NODE_BEHAVIOUR: int = Field(
+        default=os.getenv("NODE_BEHAVIOUR", 0),
+        description="Defines node's behaviour (regular, faulty, attacker)",
+        env="NODE_BEHAVIOUR"
+    )
 
     # ----- Logging --------
     LOG_LEVEL: Optional[str] = Field(
