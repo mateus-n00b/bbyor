@@ -60,20 +60,23 @@ class ContractClient:
         return self.contract.functions.verifyProof(proof[0], proof[1], proof[2], proof[3]).call()
 
     def register_neighbor(self, neighbor_did: str):
-        account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
-        nonce = self.w3.eth.get_transaction_count(account.address)
-        print("Registering neighbor...")
-        # No futuro não será necessário pois usaremos o address => did    
-        tx = self.contract.functions.registerNeighbor(self.did, neighbor_did).build_transaction({
-            'from': account.address,
-            'nonce': nonce,
-            'gas': 300000,
-            'gasPrice': self.w3.to_wei('10', 'gwei')
-        })
+        try: 
+            account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
+            nonce = self.w3.eth.get_transaction_count(account.address)
+            print("Registering neighbor...")
+            # No futuro não será necessário pois usaremos o address => did    
+            tx = self.contract.functions.registerNeighbor(self.did, neighbor_did).build_transaction({
+                'from': account.address,
+                'nonce': nonce,
+                'gas': 300000,
+                'gasPrice': self.w3.to_wei('10', 'gwei')
+            })
 
-        signed_tx = self.signtx(tx)
-        hash = self.send_tx(signed_tx)
-        # receipt = self.get_receipt(hash)
+            signed_tx = self.signtx(tx)
+            hash = self.send_tx(signed_tx)
+            # receipt = self.get_receipt(hash)
+        except Exception as err:
+            print(err)
 
     # verify proof and update reputation
     def register_result(self,proof: list):
