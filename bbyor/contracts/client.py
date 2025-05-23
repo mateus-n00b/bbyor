@@ -56,6 +56,7 @@ class ContractClient:
         try:
             return self.w3.eth.wait_for_transaction_receipt(tx_hash)
         except Exception as e:
+            # Just for debugging 
             self.logger.info(f"[ERROR] Waiting for receipt failed: {e}")
             raise
 

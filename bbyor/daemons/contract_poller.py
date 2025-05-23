@@ -45,8 +45,8 @@ class ContractPoller:
         """Override this with your business logic"""
         if did == settings.PUBLIC_DID:
             if settings.NODE_BEHAVIOUR == 1: 
-                # Fail 30% of the time
-                if chance_30_percent(12):
+                # Fail 50% of the time
+                if chance_30_percent():
                     propose_challenge()   
             elif settings.NODE_BEHAVIOUR == 2:
                 # Wait till the higher reputation to perform the attack

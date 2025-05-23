@@ -67,6 +67,10 @@ npx hardhat compile
 npx hardhat ignition deploy ignition/modules/Lock.js --network localhost
 ```
 
+**Get data**
+```
+ CONTRACT_ADDR=0x97fAFd95bc0A332aA6123A8f8f369dfc492ff1D0 CONTRACT_ABI_PATH=bbyor/contracts/artifacts/abi.json GENESIS_FHE=bbyor/contracts/genesis_openfhe.json  python -m bbyor.services.collect_data
+```
 
 Refer to: docker pull ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
 

@@ -18,7 +18,7 @@ contract BBYOR {
     event Reduced(uint256 a);
     event RepIncreased(uint256 newRep);
     event VerifiedProof(string did, bool verified);
-
+    event Debug(uint);
     // Structs
     struct User {
         bytes32 did;
@@ -48,6 +48,7 @@ contract BBYOR {
     uint256 constant decrease_factor = 50; // 0.05%
     uint256 private initial_rep = 350; // 35%
     uint256 private total_verified = 0;
+    mapping(string => uint256) private verificationCount;
     
 
      // Multiplicação: (a * b) / SCALE
@@ -56,7 +57,7 @@ contract BBYOR {
     }
 
     // Divisão: (a * SCALE) / b
-    function divide(uint256 a, uint256 b) internal  pure returns (uint256) {
+    function divide(uint256 a, uint256 b) internal pure returns (uint256) {
         return (a * SCALE) / b;
     }
 
@@ -67,18 +68,23 @@ contract BBYOR {
         // require(n_nodes <= 0, "Number of neighbors should be greater than 0");
         require(block.timestamp - lastTimestamp > lastRandomInterval, "Challenge is still happening...");
         string memory did = peers[lastChosenPeerIndex];
-        uint256 recv = total_verified;
+        uint256 recv = verificationCount[did];
         uint256 rep = peerRecords[did].serverRep;         
         uint256 n_nodes = peerRecords[did].n_neighbors;
+        peerRecords[did].updated = block.timestamp;
 
         if (n_nodes == 0){
             n_nodes = 1;
         }
 
         if (recv == 0){
-            uint256 penalty = multiply(n_nodes, decrease_factor);
-            rep = (penalty >= rep) ? 0 : rep - penalty * n_nodes;
-            // emit Reduced(rep);
+            uint256 penalty = multiply(n_nodes * SCALE, decrease_factor);
+            rep = (penalty >= rep) ? 0 : rep - penalty;
+            peerRecords[did].serverRep = rep;
+            // emit Debug(multiply(n_nodes, decrease_factor));
+            // emit Debug(rep - penalty);
+            emit Reduced(rep);
+            return;
         }
 
         if (recv < multiply(n_nodes, divide(2, 3))){
@@ -86,16 +92,17 @@ contract BBYOR {
             rep = (penalty >= rep) ? 0 : rep - penalty;
 
             peerRecords[did].serverRep = rep;
-            // emit Reduced(rep);
+            emit Reduced(rep);
+            return ;
         }
         else{
             uint256 reward = multiply(divide(recv, n_nodes), increase_factor);
             rep += reward;
 
             peerRecords[did].serverRep = rep;
-            // emit RepIncreased(rep);
+            emit RepIncreased(rep);
+            return ;
         }
-        peerRecords[did].updated = block.timestamp;
     }
 
     // function update_client_rep(string memory did, uint256 finish_time) private{
@@ -159,9 +166,6 @@ contract BBYOR {
         // 2 seconds to process the reputation
         require(block.timestamp - lastTimestamp > lastRandomInterval+2, "Too early to select again");
 
-        // reset 
-        total_verified = 0;
-
         uint256 newIndex = _generateRandomIndex(peers.length);
 
         // Ensure a new peer is selected (avoid immediate repetition)
@@ -172,6 +176,9 @@ contract BBYOR {
         lastChosenPeerIndex = newIndex;
         lastRandomInterval = _getRandomInterval();
         lastTimestamp = block.timestamp;
+
+        string memory selectedPeer = peers[newIndex];
+        verificationCount[selectedPeer] = 0; // reset
 
         emit PeerSelected(peers[newIndex], lastRandomInterval);
     }
@@ -204,21 +211,40 @@ contract BBYOR {
     }
 
     function registerResult(string memory did, uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[4] calldata _pubSignals) external  {
-            require(peerRecords[did].did != peerRecords[peers[lastChosenPeerIndex]].did, "Only clients can register results");            
-            string memory serverDID = peers[lastChosenPeerIndex];
-            if (!peerRecords[serverDID].neighbors[did]){
-                peerRecords[serverDID].neighbors[did] = true;
-                peerRecords[serverDID].n_neighbors += 1;
-            }
-            bool isVerified = verifyProof(_pA, _pB, _pC, _pubSignals);
-            emit VerifiedProof(did, isVerified); 
-            if (isVerified){
-                total_verified += 1;  
-                emit VerifiedProof(did, true);                
-            }else{
-            emit VerifiedProof(did, false);            
-            }
+        require(peerRecords[did].did != peerRecords[peers[lastChosenPeerIndex]].did, "Only clients can register results");            
+            
+        string memory serverDID = peers[lastChosenPeerIndex];
+
+        if (!peerRecords[serverDID].neighbors[did]){
+            peerRecords[serverDID].neighbors[did] = true;
+            peerRecords[serverDID].n_neighbors += 1;
+        }
+
+        bool isVerified = verifyProof(_pA, _pB, _pC, _pubSignals);
+        emit VerifiedProof(did, isVerified); 
+
+        if (isVerified){
+            verificationCount[serverDID] += 1;
+        }
     }
+
+
+    // function registerResult(string memory did, uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[4] calldata _pubSignals) external  {
+    //         require(peerRecords[did].did != peerRecords[peers[lastChosenPeerIndex]].did, "Only clients can register results");            
+    //         string memory serverDID = peers[lastChosenPeerIndex];
+    //         if (!peerRecords[serverDID].neighbors[did]){
+    //             peerRecords[serverDID].neighbors[did] = true;
+    //             peerRecords[serverDID].n_neighbors += 1;
+    //         }
+    //         bool isVerified = verifyProof(_pA, _pB, _pC, _pubSignals);
+    //         emit VerifiedProof(did, isVerified); 
+    //         if (isVerified){
+    //             total_verified += 1;  
+    //             emit VerifiedProof(did, true);                
+    //         }else{
+    //         emit VerifiedProof(did, false);            
+    //         }
+    // }
 /*
     Copyright 2021 0KIMS association.
 
@@ -406,4 +432,3 @@ contract BBYOR {
          }
      }
  }
-
