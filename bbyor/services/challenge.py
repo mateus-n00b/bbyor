@@ -27,10 +27,11 @@ def get_nonce():
     nonce = contract_client.get_nonce(1)
     return int(nonce)
 
-def propose_challenge():
+def propose_challenge(connection_ids: list = None):
     results = get_connections()["results"]
-    connection_ids = [conn["connection_id"] for conn in results if conn["rfc23_state"] == "completed" 
-                      and "their_public_did" in conn and conn["their_public_did"] != settings.PUBLIC_DID]
+    if not connection_ids:
+        connection_ids = [conn["connection_id"] for conn in results if conn["rfc23_state"] == "completed" 
+                        and "their_public_did" in conn and conn["their_public_did"] != settings.PUBLIC_DID]
     a = encrypt(_random())
     nonce = get_nonce()
     logger.info(f"Creating challenge with nonce {nonce}...")

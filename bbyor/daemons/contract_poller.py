@@ -17,6 +17,8 @@ class ContractPoller:
         self.logger = get_logger()
         self.lastChosenPeer = None
         self.elapsed_time = datetime.now()
+        self.counter = 0
+        self.node_turn = False
 
     async def run(self):
         """Main daemon loop"""
@@ -42,22 +44,31 @@ class ContractPoller:
             await asyncio.sleep(self.interval)
 
     async def _process_value(self, did):
-        """Override this with your business logic"""
-        if did == settings.PUBLIC_DID:
-            if settings.NODE_BEHAVIOUR == 1: 
-                # Fail 50% of the time
-                if chance_30_percent():
+        """Override this with your business logic"""        
+        if did == settings.PUBLIC_DID:            
+            if settings.NODE_BEHAVIOUR == 1 and not self.node_turn: 
+                self.node_turn = True # is my turn?
+                
+                # Fail 30% of the time
+                if not chance_30_percent(settings.SEED + self.counter):
+                    self.logger.info("Good boy... For now")
                     propose_challenge()   
+
+                self.counter += 1 # increment seed
             elif settings.NODE_BEHAVIOUR == 2:
                 # Wait till the higher reputation to perform the attack
                 if float(contract_client.get_reputation())/1000 < 0.6:
+                    self.logger.info("Good boy... For now")
                     propose_challenge()
             else:
                 propose_challenge()
         else:
+            # reset node_turn
+            self.node_turn = False
             # Do I know this DID? If not, connect 
             # NOTE: implement some kind of flag to this (AUTO_CONNECT = True)
             # Problem: acapy doesnt prevent redudant connections
+            # TODO: Request challenge from the new connection
             my_connections = get_connections()["results"]
             if did not in str(my_connections):
                 if establish_connection(did):

@@ -97,7 +97,8 @@ contract BBYOR {
         }
         else{
             uint256 reward = multiply(divide(recv, n_nodes), increase_factor);
-            rep += reward;
+            rep = (rep >= SCALE) ? SCALE : rep + reward; // ceil
+            // rep += reward;
 
             peerRecords[did].serverRep = rep;
             emit RepIncreased(rep);
@@ -432,3 +433,4 @@ contract BBYOR {
          }
      }
  }
+

@@ -70,7 +70,9 @@ def establish_connection(did: str) -> bool:
         
         if response.status_code == 200:
             logger.info(f"Successfully initiated connection with {did}")
-            return True
+            results = response.json()
+            conn_id = results["connection_id"]
+            return conn_id
             
         logger.warning(
             f"Unexpected response for {did}: "

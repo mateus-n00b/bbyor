@@ -25,6 +25,12 @@ class Settings(BaseSettings):
         env="NODE_BEHAVIOUR"
     )
 
+    SEED: int = Field(
+        default=os.getenv("SEED", 12),
+        description="Defines node's behaviour (regular, faulty, attacker)",
+        env="SEED"
+    )
+
     # ----- Logging --------
     LOG_LEVEL: Optional[str] = Field(
         default=os.getenv("LOG_LEVEL", "DEBUG"),

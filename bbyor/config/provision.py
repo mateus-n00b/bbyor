@@ -9,7 +9,7 @@ from .settings import settings
 
 logger = get_logger()
 
-def provision() -> Optional[Tuple[Path, Path]]:
+async def provision() -> Optional[Tuple[Path, Path]]:
     """
     Idempotent provisioning:
     1. Creates config directory if missing.
