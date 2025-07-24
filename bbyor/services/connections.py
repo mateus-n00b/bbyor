@@ -5,6 +5,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from ..config.settings import settings
 from ..utils.logging import get_logger
 from ..contracts.client import contract_client
+import time
 
 logger = get_logger()
 
@@ -61,28 +62,34 @@ def get_public_did():
     wait=wait_exponential(multiplier=1, min=2, max=5)
 )
 def establish_connection(did: str) -> bool:
-    """Create connection with retry logic"""
-    try:
-        response = rq.post(
-            f"{settings.ACAPY_URL}{settings.DID_EXCHANGE_ENDPOINT.format(did)}",
-            timeout=10
-        )
-        
-        if response.status_code == 200:
-            logger.info(f"Successfully initiated connection with {did}")
-            results = response.json()
-            conn_id = results["connection_id"]
-            return conn_id
+    """Create connection with retry logic"""    
+    max_retries = 4
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = rq.post(
+                f"{settings.ACAPY_URL}{settings.DID_EXCHANGE_ENDPOINT.format(did)}",
+                timeout=10
+            )
             
-        logger.warning(
-            f"Unexpected response for {did}: "
-            f"Status={response.status_code}, Response={response.text}"
-        )
-        return False
-        
-    except Exception as e:
-        logger.error(f"Failed to connect to {did}: {str(e)}")
-        raise
+            if response.status_code == 200:
+                logger.info(f"Successfully initiated connection with {did}")
+                results = response.json()
+                conn_id = results["connection_id"]
+                return conn_id
+                
+            logger.warning(
+                f"Unexpected response for {did}: "
+                f"Status={response.status_code}, Response={response.text}"
+            )
+            return False
+            
+        except Exception as e:
+            print(f"Attempt {attempt} failed: {e}")
+            if attempt < max_retries:
+                time.sleep(2)  # Wait before retrying
+            else:
+                logger.error(f"Failed to connect to {did}: {str(e)}")
+                raise
 
 def handle_connections() -> dict:
     """
@@ -118,5 +125,19 @@ def handle_connections() -> dict:
     return results
 
 def send_message(connection_id: str, message: dict):
-    message = json.dumps(message)
-    response = rq.post(settings.ACAPY_URL+settings.BASIC_MESSAGE_URI.format(connection_id), json={"content": str(message)})
+    message_json = json.dumps(message)
+    url = settings.ACAPY_URL + settings.BASIC_MESSAGE_URI.format(connection_id)
+
+    max_retries = 4
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = rq.post(url, json={"content": message_json})
+            response.raise_for_status()  # Raises HTTPError on bad responses
+            return  # Success
+        except Exception as e:
+            print(f"Attempt {attempt} failed: {e}")
+            if attempt < max_retries:
+                time.sleep(2)  # Wait before retrying
+            else:
+                print("All retry attempts failed.")
+                raise  # Re-raise the last exception after final attempt

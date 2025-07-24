@@ -23,13 +23,17 @@ def run():
                         last_did = contract_client.get_latest_value()
                         rep = float(contract_client.get_reputation(did))/1000
                         rep = rep if rep <= 1.0 else 1.0 
+                        if not data.get(last_did) and last_did:
+                            last_rep = float(contract_client.get_reputation(last_did))/1000
+                            data[last_did] = [last_rep]
+                            peers.append(last_did)
                         # Did it change?
                         if rep != data[did][-1]:
                             # print(f"{now},{did},{rep}")
                             changed = True
                             data[did].append(rep)
                     if changed:
-                        print(f"Last chosen: {last_did}")
+                        print(f"Last chosen: {last_did}")                    
                         for did in peers:
                             print(f"{now},{did},{data[did][-1]}")
                             fp.write(f"{now},{did},{data[did][-1]}\n")

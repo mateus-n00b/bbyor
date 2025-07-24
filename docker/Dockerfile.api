@@ -63,7 +63,6 @@ RUN curl -sL https://nodejs.org/dist/v22.15.0/node-v22.15.0-linux-x64.tar.xz | t
     && ~/nodejs/bin/npm install -g snarkjs
 
 COPY --chown=bbyor:bbyor bbyor circuits $HOME/app/ 
-# RUN chown -R bbyor:bbyor $HOME/app/
 
 WORKDIR /app
 

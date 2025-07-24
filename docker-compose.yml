@@ -1,6 +1,20 @@
 version: '3'
 
 services:
+  postgres:
+    image: docker.io/postgres:14
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: config  # just initial db, agent3 and agent4 will use their own
+    volumes:
+    - pgdata:/var/lib/postgresql/data
+    networks:
+    - bbyor
+    ports:
+    - "5432:5432"
+
   agent1: 
     image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
     command: >-
@@ -59,6 +73,10 @@ services:
       --wallet-name bancoumwallet6 --wallet-type askar-anoncreds
       --admin 0.0.0.0 8256
       --admin-insecure-mode
+      --wallet-type askar-anoncreds --storage-type postgres_storage
+      --wallet-storage-type postgres_storage
+      --wallet-storage-config "{\"url\":\"postgres:5432\",\"wallet_scheme\":\"agent3wallet\"}"
+      --wallet-storage-creds "{\"account\":\"postgres\",\"password\":\"mysecretpassword\",\"admin_account\":\"postgres\",\"admin_password\":\"mysecretpassword\"}"
       --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection
       --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request
       --auto-store-credential --auto-respond-presentation-proposal --auto-respond-credential-request

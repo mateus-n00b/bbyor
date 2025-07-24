@@ -173,6 +173,24 @@ class ContractClient:
         did = did if did else settings.PUBLIC_DID
         return self.contract.functions.getReputation(did).call()
 
+    def register_peer(self, did: str):
+        try:
+            account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
+            nonce = self.w3.eth.get_transaction_count(account.address)
+
+            tx = self.contract.functions.registerPeer(did).build_transaction({
+            'from': account.address,
+            'nonce': nonce,
+            'gas': 300000,
+            'gasPrice': self.w3.to_wei('10', 'gwei')
+            })
+            
+            signed_tx = self.signtx(tx)
+            tx_hash = self.send_tx(signed_tx)
+            receipt = self.get_receipt(tx_hash)
+        except Exception as err:
+            self.logger.info(f"[ERROR] Failed to register peer: {err}")            
+
     def get_peer(self):
         try:
             account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)

@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 from ..services.fhe import genKey, serializeKeyToFile
 from ..services.connections import handle_connections
 from .settings import settings
-
+from ..contracts.client import contract_client
 
 logger = get_logger()
 
@@ -18,6 +18,9 @@ async def provision() -> Optional[Tuple[Path, Path]]:
     Returns:
         Tuple of (public_key_path, secret_key_path) if keys were generated, else None.
     """    
+    # Register DID
+    contract_client.register_peer(settings.PUBLIC_DID)
+
     try:
         # Get agent's public DID
         # did = get_public_did()

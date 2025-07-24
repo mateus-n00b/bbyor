@@ -1,6 +1,7 @@
 import random 
 import requests as rq
 from Crypto.Hash import MD5
+N_NODES = 20
 # Register dids
 # body 
 body = {"role":"ENDORSER","alias":None,"did":None,"seed":""}
@@ -9,11 +10,15 @@ url = "http://localhost:9000/register"
 # set seed
 random.seed(12)
 seeds = [
-    MD5.MD5Hash(str(random.random()).encode()).hexdigest() for _ in range(5)
+    MD5.MD5Hash(str(random.random()).encode()).hexdigest() for _ in range(N_NODES)
 ]
+# seeds[0] = "02fcd69da34927bc93bae7229e73ea81"
+# seeds[1] = "315b7328bfdb532ca0dee81517f49a24"
+# seeds[2] = "60b725f10c9c85c70d97880dfe8191b3"
+# seeds[3] = "3b5d5c3712955042212316173ccf37be"
 
 dids = []
-for i in range(5):
+for i in range(N_NODES):
     body["seed"] = seeds[i]
     result = rq.post(url=url, json=body).json()
     dids.append(result["did"])
@@ -24,211 +29,14 @@ docker_compose_file = '''
 version: '3'
 
 services:
-  agent1: 
-    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
-    command: >-
-      start --inbound-transport http 0.0.0.0 8155 --outbound-transport http --log-level error
-      --endpoint http://${{HOST_IP}}:8155 --label AGENT1 --seed 02fcd69da34927bc93bae7229e73ea81
-      --genesis-url http://${{HOST_IP}}:9000/genesis
-      --ledger-pool-name localindypool --wallet-key 123456
-      --wallet-name bancoumwallet6 --wallet-type askar-anoncreds
-      --admin 0.0.0.0 8254
-      --admin-insecure-mode
-      --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection
-      --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request
-      --auto-store-credential --auto-respond-presentation-proposal --auto-respond-credential-request
-      --auto-respond-credential-proposal --debug-connections --debug-credentials --debug-presentations
-      --auto-provision --requests-through-public-did --admin-client-max-request-size 10
-      --webhook-url http://${{HOST_IP}}:8001 --max-message-size 3097152
-    ports:
-      - 8254:8254
-      - 8155:8155
-    networks:
-      - bbyor
-    volumes:
-      - agent1-data:/home/aries/.acapy_agent
-
-  agent2: 
-    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
-    command: >-
-      start --inbound-transport http 0.0.0.0 8156 --outbound-transport http --log-level error
-      --endpoint http://${{HOST_IP}}:8156 --label AGENT2 --seed 315b7328bfdb532ca0dee81517f49a24
-      --genesis-url http://${{HOST_IP}}:9000/genesis
-      --ledger-pool-name localindypool --wallet-key 123456
-      --wallet-name bancoumwallet6 --wallet-type askar-anoncreds
-      --admin 0.0.0.0 8258
-      --admin-insecure-mode
-      --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection
-      --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request
-      --auto-store-credential --auto-respond-presentation-proposal --auto-respond-credential-request
-      --auto-respond-credential-proposal --debug-connections --debug-credentials --debug-presentations
-      --auto-provision --requests-through-public-did --admin-client-max-request-size 10
-      --webhook-url http://${{HOST_IP}}:8002 --max-message-size 3097152
-    ports:
-      - 8258:8258
-      - 8156:8156
-    networks:
-      - bbyor
-    volumes:
-      - agent2-data:/home/aries/.acapy_agent
-
-  agent3: 
-    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
-    command: >-
-      start --inbound-transport http 0.0.0.0 8157 --outbound-transport http --log-level error
-      --endpoint http://${{HOST_IP}}:8157 --label AGENT3 --seed 60b725f10c9c85c70d97880dfe8191b3
-      --genesis-url http://${{HOST_IP}}:9000/genesis
-      --ledger-pool-name localindypool --wallet-key 123456
-      --wallet-name bancoumwallet6 --wallet-type askar-anoncreds
-      --admin 0.0.0.0 8256
-      --admin-insecure-mode
-      --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection
-      --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request
-      --auto-store-credential --auto-respond-presentation-proposal --auto-respond-credential-request
-      --auto-respond-credential-proposal --debug-connections --debug-credentials --debug-presentations
-      --auto-provision --requests-through-public-did --admin-client-max-request-size 10
-      --webhook-url http://${{HOST_IP}}:8003 --max-message-size 3097152
-    ports:
-      - 8256:8256
-      - 8157:8157
-    networks:
-      - bbyor
-    volumes:
-      - agent3-data:/home/aries/.acapy_agent
-
-  agent4: 
-    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
-    command: >-
-      start --inbound-transport http 0.0.0.0 8158 --outbound-transport http --log-level error
-      --endpoint http://${{HOST_IP}}:8158 --label AGENT4 --seed 3b5d5c3712955042212316173ccf37be
-      --genesis-url http://${{HOST_IP}}:9000/genesis
-      --ledger-pool-name localindypool --wallet-key 123456
-      --wallet-name bancoumwallet6 --wallet-type askar-anoncreds
-      --admin 0.0.0.0 8257
-      --admin-insecure-mode
-      --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection
-      --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request
-      --auto-store-credential --auto-respond-presentation-proposal --auto-respond-credential-request
-      --auto-respond-credential-proposal --debug-connections --debug-credentials --debug-presentations
-      --auto-provision --requests-through-public-did --admin-client-max-request-size 10
-      --webhook-url http://${{HOST_IP}}:8004 --max-message-size 3097152
-    ports:
-      - 8257:8257
-      - 8158:8158
-    networks:
-      - bbyor
-    volumes:
-      - agent4-data:/home/aries/.acapy_agent
 {0}
        
-  node1:
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.api 
-    # network_mode: host         
-    image: bbyor
-    user: 1000:1000
-    command: fastapi dev main.py --host 0.0.0.0 --port 8000
-    environment:
-      - ACAPY_URL=http://${{HOST_IP}}:8254
-      - PUBLIC_DID=18q1r8BkyTQLMKC7XxPuG
-      - LOG_LEVEL=DEBUG
-      - DEFAULT_DIR=/home/bbyor/.config/bbyor
-      - PROVIDER_URL=http://${{HOST_IP}}:8545
-      - GENESIS_FHE=./contracts/genesis_openfhe.json
-      - CONTRACT_ADDR=${{CONTRACT_ADDR}}
-      - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-    networks:
-      - bbyor 
-    ports:
-      - 8001:8000   
-    volumes:
-      - nodeA-data:/home/bbyor/.config/bbyor
-    depends_on:
-      - agent2
-  node2:
-    image: bbyor
-    user: 1000:1000
-    command: fastapi dev main.py --host 0.0.0.0
-    environment:
-      - ACAPY_URL=http://${{HOST_IP}}:8258
-      - PUBLIC_DID=AQjRaYC89jBJL4e7SEYwaP
-      - LOG_LEVEL=DEBUG
-      # - DEFAULT_DIR=${{HOME:-/tmp}}/.config/bbyor
-      - DEFAULT_DIR=/home/bbyor/.config/bbyor
-      - PROVIDER_URL=http://${{HOST_IP}}:8545
-      - GENESIS_FHE=./contracts/genesis_openfhe.json
-      - CONTRACT_ADDR=${{CONTRACT_ADDR}}
-      - PRIVATE_KEY=0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
-    networks:
-      - bbyor
-    ports:
-      - 8002:8000
-    volumes:
-      - nodeB-data:/home/bbyor/.config/bbyor
-    depends_on:
-      - agent2
-
-  node3:
-    image: bbyor
-    user: 1000:1000
-    command: fastapi dev main.py --host 0.0.0.0
-    environment:
-      - ACAPY_URL=http://${{HOST_IP}}:8256
-      - PUBLIC_DID=BBRiaUGLudKRKJCGU8GoW1
-      - LOG_LEVEL=DEBUG
-      - DEFAULT_DIR=/home/bbyor/.config/bbyor
-      - PROVIDER_URL=http://${{HOST_IP}}:8545
-      - GENESIS_FHE=./contracts/genesis_openfhe.json
-      - CONTRACT_ADDR=${{CONTRACT_ADDR}}
-      - PRIVATE_KEY=0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
-      - NODE_BEHAVIOUR=1
-    networks:
-      - bbyor
-    ports:
-      - 8003:8000
-    volumes:
-      - node3-data:/home/bbyor/.config/bbyor
-    depends_on:
-    - agent4
-
-  node4:
-    image: bbyor
-    user: 1000:1000
-    command: fastapi dev main.py --host 0.0.0.0
-    environment:
-      - ACAPY_URL=http://${{HOST_IP}}:8257
-      - PUBLIC_DID=Bnj3a8v8QAasGgEkLeG4kM
-      - LOG_LEVEL=DEBUG
-      - DEFAULT_DIR=/home/bbyor/.config/bbyor
-      - PROVIDER_URL=http://${{HOST_IP}}:8545
-      - GENESIS_FHE=./contracts/genesis_openfhe.json
-      - CONTRACT_ADDR=${{CONTRACT_ADDR}}
-      - PRIVATE_KEY=0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
-      - NODE_BEHAVIOUR=2
-    networks:
-      - bbyor
-    ports:
-      - 8004:8000
-    volumes:
-      - node4-data:/home/bbyor/.config/bbyor
-    depends_on:
-      - agent4
-
 {1}
 
 networks:
   bbyor:
 
 volumes:
-  nodeA-data:
-  nodeB-data:
-  node3-data:
-  node4-data:
-  agent1-data:
-  agent2-data:
-  agent3-data:
-  agent4-data:
 {2}
 '''
 
@@ -243,6 +51,10 @@ template_agent = '''
       --wallet-name bancoumwallet6 --wallet-type askar-anoncreds
       --admin 0.0.0.0 {2}
       --admin-insecure-mode
+      --wallet-type askar-anoncreds --storage-type postgres_storage
+      --wallet-storage-type postgres_storage
+      --wallet-storage-config \\"{{\\"url\\":\\"postgres:5432\\",\\"wallet_scheme\\":\\"agent{3}wallet\\"}}\\"
+      --wallet-storage-creds \\"{{\\"account\\":\\"postgres\\",\\"password\\":\\"mysecretpassword\\",\\"admin_account\\":\\"postgres\\",\\"admin_password\\":\\"mysecretpassword\\"}}\\"
       --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection
       --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request
       --auto-store-credential --auto-respond-presentation-proposal --auto-respond-credential-request
@@ -257,6 +69,7 @@ template_agent = '''
     volumes:
       - agent{3}-data:/home/aries/.acapy_agent
 '''
+
 
 template_node = '''
   node{1}:
@@ -286,7 +99,7 @@ template_node = '''
 initial_admin_port = 8257
 initial_endpoint_port = 8158
 initial_api_port = 8004
-initial_agent_number = 4
+initial_agent_number = 0
 
 # list of usable private keys
 private_keys = [
@@ -317,11 +130,11 @@ nodes = str()
 agents = str()
 volumes = str()
 
-for i in range(1,6):
+for i in range(0,N_NODES):
     nodes += template_node.format(initial_admin_port+i, i+initial_agent_number,0,
                                 initial_api_port+i, private_keys[i+initial_agent_number], dids[i-1])
     
-    agents += template_agent.format(initial_admin_port+i, seeds[i-1], initial_endpoint_port+i,
+    agents += template_agent.format(initial_endpoint_port+i, seeds[i-1], initial_admin_port+i,
                                 i+initial_agent_number, initial_api_port+i)
     volumes += f"  agent{initial_agent_number+i}-data:\n"
 

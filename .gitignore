@@ -193,20 +193,20 @@ ignition/deployments/chain-31337
 circomlib/
 circuits/circomlib
 # Ignore build artifacts
-*.r1cs
-*.wasm
-*.zkey
-*.wtns
-*.sym
-*.dat
+# *.r1cs
+# *.wasm
+# *.zkey
+# *.wtns
+# *.sym
+# *.dat
 
 # Powers of Tau files
-*.ptau
+# *.ptau
 
 # Proofs and public signals
-proof.json
-public.json
-witness.json
+# proof.json
+# public.json
+# witness.json
 
 # Input files (optional: if you generate inputs dynamically)
 input.json

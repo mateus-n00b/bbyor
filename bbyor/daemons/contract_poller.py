@@ -26,7 +26,7 @@ class ContractPoller:
         while not self._shutdown:
             try:
                 did, interval = contract_client.get_peer()                
-                self.interval = int(interval) # update interval
+                self.interval = int(interval) if interval else self.interval # update interval
                 self.logger.info(f"Latest contract value: {did}")
                 await self._process_value(did)  # Custom logic
             except Exception as e:
@@ -69,6 +69,7 @@ class ContractPoller:
             # NOTE: implement some kind of flag to this (AUTO_CONNECT = True)
             # Problem: acapy doesnt prevent redudant connections
             # TODO: Request challenge from the new connection
+            # NOTE: if there is no connections active -> fail 
             my_connections = get_connections()["results"]
             if did not in str(my_connections):
                 if establish_connection(did):
