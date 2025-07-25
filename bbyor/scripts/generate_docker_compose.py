@@ -1,7 +1,7 @@
 import random 
 import requests as rq
 from Crypto.Hash import MD5
-N_NODES = 20
+N_NODES = 3
 # Register dids
 # body 
 body = {"role":"ENDORSER","alias":None,"did":None,"seed":""}
@@ -22,13 +22,21 @@ for i in range(N_NODES):
     body["seed"] = seeds[i]
     result = rq.post(url=url, json=body).json()
     dids.append(result["did"])
-
+print(seeds)
 print(dids)
 
 docker_compose_file = '''
 version: '3'
 
 services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_USER: postgres
+      POSTGRES_DB: config
+    ports:
+      - "5432:5432"
 {0}
        
 {1}
@@ -53,8 +61,8 @@ template_agent = '''
       --admin-insecure-mode
       --wallet-type askar-anoncreds --storage-type postgres_storage
       --wallet-storage-type postgres_storage
-      --wallet-storage-config \\"{{\\"url\\":\\"postgres:5432\\",\\"wallet_scheme\\":\\"agent{3}wallet\\"}}\\"
-      --wallet-storage-creds \\"{{\\"account\\":\\"postgres\\",\\"password\\":\\"mysecretpassword\\",\\"admin_account\\":\\"postgres\\",\\"admin_password\\":\\"mysecretpassword\\"}}\\"
+      --wallet-storage-config \"{{\\"url\\":\\"postgres:5432\\",\\"wallet_scheme\\":\\"agent{3}wallet\\"}}\"
+      --wallet-storage-creds \"{{\\"account\\":\\"postgres\\",\\"password\\":\\"mysecretpassword\\",\\"admin_account\\":\\"postgres\\",\\"admin_password\\":\\"mysecretpassword\\"}}\"
       --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection
       --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request
       --auto-store-credential --auto-respond-presentation-proposal --auto-respond-credential-request
@@ -68,6 +76,8 @@ template_agent = '''
       - bbyor
     volumes:
       - agent{3}-data:/home/aries/.acapy_agent
+    depends_on:
+      - posgres
 '''
 
 
@@ -96,9 +106,9 @@ template_node = '''
       - agent{1}
 '''
 
-initial_admin_port = 8257
-initial_endpoint_port = 8158
-initial_api_port = 8004
+initial_admin_port = 8250
+initial_endpoint_port = 8150
+initial_api_port = 8001
 initial_agent_number = 0
 
 # list of usable private keys
@@ -130,13 +140,15 @@ nodes = str()
 agents = str()
 volumes = str()
 
-for i in range(0,N_NODES):
+for i in range(N_NODES):
     nodes += template_node.format(initial_admin_port+i, i+initial_agent_number,0,
-                                initial_api_port+i, private_keys[i+initial_agent_number], dids[i-1])
+                                initial_api_port+i, private_keys[i], dids[i])
     
-    agents += template_agent.format(initial_endpoint_port+i, seeds[i-1], initial_admin_port+i,
+    agents += template_agent.format(initial_endpoint_port+i, seeds[i], initial_admin_port+i,
                                 i+initial_agent_number, initial_api_port+i)
     volumes += f"  agent{initial_agent_number+i}-data:\n"
+    volumes += f"  node{initial_agent_number+i}-data:\n"
+    print(dids[i], seeds[i])
 
 fp = open("/tmp/docker-compose.yml", "w")
 content = docker_compose_file.format(agents, nodes, volumes)
