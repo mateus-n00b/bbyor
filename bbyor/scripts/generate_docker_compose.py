@@ -31,7 +31,7 @@ version: '3'
 services:
   postgres:
     restart: always
-    image: postgres:14
+    image: docker.io/postgres:latest
     environment:
       POSTGRES_PASSWORD: mysecretpassword
       POSTGRES_USER: postgres
@@ -39,7 +39,9 @@ services:
     ports:
       - "5432:5432"
     volumes:
-  - postgres_data:/var/lib/postgresql/data  # 🔐 Data is stored here
+      - postgres_data:/var/lib/postgresql/data  # 🔐 Data is stored here
+    networks:
+     - bbyor
 {0}
        
 {1}
@@ -53,7 +55,7 @@ volumes:
 
 template_agent = '''
   agent{3}: 
-    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
+    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.2-lts
     restart: always
     command: >-
       start --inbound-transport http 0.0.0.0 {0} --outbound-transport http --log-level error
@@ -62,8 +64,7 @@ template_agent = '''
       --ledger-pool-name localindypool --wallet-key 123456
       --wallet-name bancoumwallet6 --wallet-type askar-anoncreds
       --admin 0.0.0.0 {2}
-      --admin-insecure-mode
-      --wallet-type askar-anoncreds --storage-type postgres_storage
+      --admin-insecure-mode      
       --wallet-storage-type postgres_storage
       --wallet-storage-config \"{{\\"url\\":\\"postgres:5432\\",\\"wallet_scheme\\":\\"agent{3}wallet\\"}}\"
       --wallet-storage-creds \"{{\\"account\\":\\"postgres\\",\\"password\\":\\"mysecretpassword\\",\\"admin_account\\":\\"postgres\\",\\"admin_password\\":\\"mysecretpassword\\"}}\"
@@ -153,7 +154,6 @@ for i in range(N_NODES):
                                 i+initial_agent_number, initial_api_port+i)
     volumes += f"  agent{i}-data:\n"
     volumes += f"  node{i}-data:\n"
-    print(dids[i], seeds[i])
 volumes += "  postgres_data:\n"
 
 
