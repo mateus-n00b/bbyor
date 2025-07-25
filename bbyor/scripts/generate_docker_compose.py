@@ -30,6 +30,7 @@ version: '3'
 
 services:
   postgres:
+    restart: always
     image: postgres:14
     environment:
       POSTGRES_PASSWORD: mysecretpassword
@@ -37,6 +38,8 @@ services:
       POSTGRES_DB: config
     ports:
       - "5432:5432"
+    volumes:
+  - postgres_data:/var/lib/postgresql/data  # 🔐 Data is stored here
 {0}
        
 {1}
@@ -51,6 +54,7 @@ volumes:
 template_agent = '''
   agent{3}: 
     image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
+    restart: always
     command: >-
       start --inbound-transport http 0.0.0.0 {0} --outbound-transport http --log-level error
       --endpoint http://${{HOST_IP}}:{0} --label AGENT{3} --seed {1}
@@ -85,6 +89,7 @@ template_node = '''
   node{1}:
     image: bbyor
     user: 1000:1000
+    restart: always
     command: fastapi dev main.py --host 0.0.0.0
     environment:
       - ACAPY_URL=http://${{HOST_IP}}:{0}
@@ -146,9 +151,11 @@ for i in range(N_NODES):
     
     agents += template_agent.format(initial_endpoint_port+i, seeds[i], initial_admin_port+i,
                                 i+initial_agent_number, initial_api_port+i)
-    volumes += f"  agent{initial_agent_number+i}-data:\n"
-    volumes += f"  node{initial_agent_number+i}-data:\n"
+    volumes += f"  agent{i}-data:\n"
+    volumes += f"  node{i}-data:\n"
     print(dids[i], seeds[i])
+volumes += "  postgres_data:\n"
+
 
 fp = open("/tmp/docker-compose.yml", "w")
 content = docker_compose_file.format(agents, nodes, volumes)
