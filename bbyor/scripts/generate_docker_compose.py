@@ -62,11 +62,11 @@ template_agent = '''
       --endpoint http://${{HOST_IP}}:{0} --label AGENT{3} --seed {1}
       --genesis-url http://${{HOST_IP}}:9000/genesis
       --ledger-pool-name localindypool --wallet-key 123456
-      --wallet-name bancoumwallet6 --wallet-type askar-anoncreds
+      --wallet-name agentwallet{3} --wallet-type askar-anoncreds
       --admin 0.0.0.0 {2}
       --admin-insecure-mode      
       --wallet-storage-type postgres_storage
-      --wallet-storage-config \"{{\\"url\\":\\"postgres:5432\\",\\"wallet_scheme\\":\\"agent{3}wallet\\"}}\"
+      --wallet-storage-config \"{{\\"url\\":\\"postgres:5432\\",\\"wallet_scheme\\":\\"DatabasePerWallet\\"}}\"
       --wallet-storage-creds \"{{\\"account\\":\\"postgres\\",\\"password\\":\\"mysecretpassword\\",\\"admin_account\\":\\"postgres\\",\\"admin_password\\":\\"mysecretpassword\\"}}\"
       --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection
       --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request
