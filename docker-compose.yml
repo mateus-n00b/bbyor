@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mysecretpassword
-      POSTGRES_DB: config  # just initial db, agent3 and agent4 will use their own
+      POSTGRES_DB: config  
     volumes:
     - pgdata:/var/lib/postgresql/data
     networks:

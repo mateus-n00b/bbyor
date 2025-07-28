@@ -1,204 +1,148 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.20;
 
+import { DidRecord } from "./BBYORTypes.sol";
+
 /**
- * @title BBYOR - Byzantine Fault Tolerant Reputation System
- * @dev Manages peer reputation through decentralized verification and proof systems
- * @notice Features include peer registration, random selection, reputation management, 
- * and zero-knowledge proof verification
+ * @title BBYOR
+ * @dev Manage owner, peers, and pseudo-random peer selection
+ * TODO: avoid replay attacks with old proofs
+ * set a ceil to reputation and a decrement function 
+ * 
  */
 contract BBYOR {
-    // ============ Events ============
-    
-    // Ownership transfer events
+    // Events
     event OwnerSet(address indexed oldOwner, address indexed newOwner);
-    
-    // Peer selection events
     event PeerSelected(string peer, uint256 interval);
     event NonceCreated(uint256 nonce, address did);
-    
-    // Reputation events
     event Reduced(uint256 a);
     event RepIncreased(uint256 newRep);
-    
-    // Verification events
     event VerifiedProof(string did, bool verified);
     event Debug(uint);
-    
-    // ============ Structs ============
-    
-    /**
-     * @dev User structure containing reputation data and neighbor mappings
-     * @notice Tracks both server and client reputation separately
-     */
+    // Structs
     struct User {
-        bytes32 did;                // Hashed decentralized identifier
-        uint256 serverRep;          // Reputation as service provider
-        uint256 clientRep;          // Reputation as client
-        mapping (string => bool) neighbors; // Adjacency list for graph
-        uint256 n_neighbors;        // Count of neighbors
-        uint256 updated;            // Last update timestamp
+        bytes32 did;
+        uint256 serverRep;
+        uint256 clientRep; 
+        mapping (string did => bool) neighbors; 
+        uint256 n_neighbors; 
+        uint256 updated;
     }
 
-    // ============ State Variables ============
-    
-    // Contract ownership
+    // State Variables
     address private owner;
-    
-    // Peer management
     mapping(string => User) private peerRecords;
     string[] private peers;
-    
-    // Selection tracking
+
     uint256 private lastChosenPeerIndex = type(uint256).max;
     uint256 private lastTimestamp;
     uint256 private lastRandomInterval;
     uint256 public lastNonce;
-    
-    // Interval bounds (in seconds)
+
     uint8 private upperBound = 20;
     uint8 private lowerBound = 10;
-    
-    // Reputation constants
-    uint256 constant SCALE = 1000;       // Fixed-point precision scale
-    uint256 constant increase_factor = 30; // Reputation increase rate (0.03)
-    uint256 constant decrease_factor = 50; // Reputation decrease rate (0.05)
-    uint256 private initial_rep = 350;   // Initial reputation (35%)
-    uint256 private total_verified = 0;  // Total successful verifications
-    bool isRunning = false;              // Active verification round flag
-    
-    // Verification tracking
+
+    // Reputation Variables
+    uint256 constant SCALE = 1000; // 3 casas decimais 
+    uint256 constant increase_factor = 30; // 0.05%
+    uint256 constant decrease_factor = 50; // 0.05%
+    uint256 private initial_rep = 350; // 35%
+    uint256 private total_verified = 0;
     mapping(string => uint256) private verificationCount;
     
-    // ============ Math Functions ============
-    
-    /**
-     * @dev Fixed-point multiplication with SCALE precision
-     * @param a First operand
-     * @param b Second operand
-     * @return Result of (a * b) / SCALE
-     */
+
+     // Multiplicação: (a * b) / SCALE
     function multiply(uint256 a, uint256 b) internal pure returns (uint256) {
         return (a * b) / SCALE;
     }
 
-    /**
-     * @dev Fixed-point division with SCALE precision
-     * @param a Dividend
-     * @param b Divisor
-     * @return Result of (a * SCALE) / b
-     */
+    // Divisão: (a * SCALE) / b
     function divide(uint256 a, uint256 b) internal pure returns (uint256) {
         return (a * SCALE) / b;
     }
 
-    // ============ Reputation Management ============
-    
-    /**
-     * @dev Updates server reputation based on verification results
-     * @notice Called after verification round completes
-     * Requirements:
-     * - Must have selected a peer
-     * - Current time must exceed round duration
-     * - Round must be marked as running
-     */
-    function updateServerRep() public {
+    function updateServerRep() public  {        
+         // update rep?
+        // not first run?
         require(lastChosenPeerIndex != type(uint256).max, "No peer selected yet!");
-        require(block.timestamp - lastTimestamp > lastRandomInterval, "Challenge ongoing");
-        require(isRunning, "Round finished");
-
+        // require(n_nodes <= 0, "Number of neighbors should be greater than 0");
+        require(block.timestamp - lastTimestamp > lastRandomInterval, "Challenge is still happening...");
         string memory did = peers[lastChosenPeerIndex];
         uint256 recv = verificationCount[did];
-        uint256 rep = peerRecords[did].serverRep;
+        uint256 rep = peerRecords[did].serverRep;         
         uint256 n_nodes = peerRecords[did].n_neighbors;
         peerRecords[did].updated = block.timestamp;
 
-        // Handle case with no neighbors
-        if (n_nodes == 0) n_nodes = 1;
-        
-        isRunning = false; // End round
+        if (n_nodes == 0){
+            n_nodes = 1;
+        }
 
-        // No responses penalty
-        if (recv == 0) {
+        if (recv == 0){
             uint256 penalty = multiply(n_nodes * SCALE, decrease_factor);
             rep = (penalty >= rep) ? 0 : rep - penalty;
             peerRecords[did].serverRep = rep;
+            // emit Debug(multiply(n_nodes, decrease_factor));
+            // emit Debug(rep - penalty);
             emit Reduced(rep);
             return;
         }
 
-        // Partial responses penalty
-        if (recv < multiply(n_nodes, divide(2, 3))) {
+        if (recv < multiply(n_nodes, divide(2, 3))){
             uint256 penalty = divide((n_nodes - recv), decrease_factor);
             rep = (penalty >= rep) ? 0 : rep - penalty;
+
             peerRecords[did].serverRep = rep;
             emit Reduced(rep);
-            return;
+            return ;
         }
-        // Successful responses reward
-        else {
+        else{
             uint256 reward = multiply(divide(recv, n_nodes), increase_factor);
-            rep = (rep >= SCALE) ? SCALE : rep + reward; // Cap at 100%
+            rep = (rep >= SCALE) ? SCALE : rep + reward; // ceil
+            // rep += reward;
+
             peerRecords[did].serverRep = rep;
             emit RepIncreased(rep);
-            return;
+            return ;
         }
     }
 
-    // ============ Modifiers ============
-    
-    /**
-     * @dev Restricts function access to contract owner
-     */
+    // function update_client_rep(string memory did, uint256 finish_time) private{
+
+    // }
+
+    // Modifiers
     modifier onlyOwner() {
-        require(msg.sender == owner, "Caller not owner");
+        require(msg.sender == owner, "Caller is not owner");
         _;
     }
 
-    // ============ Constructor ============
-    
-    /**
-     * @dev Initializes contract with deployer as owner
-     */
+    // Constructor
     constructor() {
         owner = msg.sender;
         lastTimestamp = block.timestamp;
         emit OwnerSet(address(0), owner);
     }
 
-    // ============ Owner Functions ============
-    
-    /**
-     * @dev Transfers contract ownership
-     * @param newOwner Address of new owner
-     * Requirements:
-     * - Caller must be owner
-     * - New owner cannot be zero address
-     */
+    // Owner Management
     function changeOwner(address newOwner) external onlyOwner {
-        require(newOwner != address(0), "Invalid owner address");
+        require(newOwner != address(0), "New owner cannot be zero address");
         emit OwnerSet(owner, newOwner);
         owner = newOwner;
     }
 
-    /**
-     * @dev Returns current owner address
-     * @return Address of owner
-     */
     function getOwner() external view returns (address) {
         return owner;
     }
 
-    // ============ Peer Management ============
-    
-    /**
-     * @dev Registers a new peer in the system
-     * @param did Decentralized identifier string
-     * Requirements:
-     * - DID must not be empty
-     */
+    function getNonce(/*string calldata a*/) external {
+        uint256 nonce = _generateRandomIndex(9999);
+        lastNonce = nonce;
+        emit NonceCreated(nonce, msg.sender);
+    }
+
+    // Peer Management
     function registerPeer(string calldata did) external {
-        require(bytes(did).length > 0, "Empty DID");
+        require(bytes(did).length > 0, "DID cannot be empty");
         peerRecords[did].did = keccak256(abi.encodePacked(did));
         peerRecords[did].serverRep = initial_rep;
         peerRecords[did].clientRep = initial_rep;
@@ -206,48 +150,26 @@ contract BBYOR {
         peers.push(did);
     }
 
-    /**
-     * @dev Returns last selected peer's DID
-     * @return DID string
-     * Requirements:
-     * - Must have registered peers
-     * - Must have selected a peer
-     */
     function getLastChosenPeer() external view returns (string memory) {
         require(peers.length > 0, "No peers registered");
-        require(lastChosenPeerIndex < peers.length, "No peer selected");
+        require(lastChosenPeerIndex < peers.length, "No peer selected yet");
         return peers[lastChosenPeerIndex];
     }
 
-    function getNonce() external {
-    uint256 nonce = _generateRandomIndex(9999);
-    lastNonce = nonce;
-    emit NonceCreated(nonce, msg.sender);
-}
-
-    /**
-     * @dev Returns remaining time in current round
-     * @return Remaining time in seconds
-     */
     function getRemainingTime() public view returns (uint) {
-        return lastRandomInterval;
+            // remaining time
+            return lastRandomInterval;
     }
 
-    // ============ Peer Selection ============
-    
-    /**
-     * @dev Selects random peer for verification round
-     * Requirements:
-     * - Must have at least 2 peers
-     * - Must wait minimum interval between selections
-     */
+    // Peer Selection
     function getRandomPeer() external {
-        require(peers.length > 1, "Insufficient peers");
-        require(block.timestamp - lastTimestamp > lastRandomInterval+3, "Too early");
+        require(peers.length > 1, "At least two peers are required");
+        // 2 seconds to process the reputation
+        require(block.timestamp - lastTimestamp > lastRandomInterval+2, "Too early to select again");
 
         uint256 newIndex = _generateRandomIndex(peers.length);
 
-        // Ensure different peer than last selection
+        // Ensure a new peer is selected (avoid immediate repetition)
         if (newIndex == lastChosenPeerIndex) {
             newIndex = (newIndex + 1) % peers.length;
         }
@@ -255,104 +177,95 @@ contract BBYOR {
         lastChosenPeerIndex = newIndex;
         lastRandomInterval = _getRandomInterval();
         lastTimestamp = block.timestamp;
-        verificationCount[peers[newIndex]] = 0; // Reset counter
-        isRunning = true; // Start new round
+
+        string memory selectedPeer = peers[newIndex];
+        verificationCount[selectedPeer] = 0; // reset
 
         emit PeerSelected(peers[newIndex], lastRandomInterval);
     }
 
-    // ============ Internal Helpers ============
-    
-    /**
-     * @dev Generates pseudorandom index within bounds
-     * @param modulo Upper bound for random number
-     * @return Random index
-     */
+    // Internal Helpers
     function _generateRandomIndex(uint256 modulo) internal view returns (uint256) {
         return uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender))) % modulo;
     }
 
-    /**
-     * @dev Generates random interval duration
-     * @return Random interval between bounds
-     */
     function _getRandomInterval() internal view returns (uint8) {
         require(upperBound > lowerBound, "Invalid bounds");
         uint8 range = upperBound - lowerBound;
         return uint8(uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % range) + lowerBound;
     }
 
-    // ============ Neighbor Management ============
-    
-    /**
-     * @dev Registers neighbor relationship
-     * @param did Source peer DID
-     * @param did_neighbor Neighbor peer DID
-     * @return True if successful
-     * Requirements:
-     * - Neighbor must not already exist
-     */
-    function registerNeighbor(string memory did, string memory did_neighbor) public returns (bool) {
-        require(!peerRecords[did].neighbors[did_neighbor], "Already neighbors");
+    // In the future I need add the isDidOwner modifier
+    function registerNeighbor(string memory did, string memory did_neighbor) public returns (bool){
+        require(!peerRecords[did].neighbors[did_neighbor], "Neighbor already registered!");            
         peerRecords[did].neighbors[did_neighbor] = true;
         peerRecords[did].n_neighbors += 1;
-        return true;
+        return true;                        
     }
 
-    /**
-     * @dev Checks neighbor relationship
-     * @param did Source peer DID
-     * @param did_neighbor Potential neighbor DID
-     * @return True if neighbors
-     */
-    function isNeighbor(string memory did, string memory did_neighbor) public view returns(bool) {
+    function isNeighbor(string memory did, string memory did_neighbor) public view returns(bool){
         return peerRecords[did].neighbors[did_neighbor];
     }
 
-    // ============ Reputation Access ============
-    
-    /**
-     * @dev Gets peer's current reputation
-     * @param did Peer DID
-     * @return Reputation score
-     */
     function getReputation(string memory did) public view returns (uint) {
-        return peerRecords[did].serverRep;
+        return peerRecords[did].serverRep; 
     }
 
-    // ============ Verification System ============
-    
-    /**
-     * @dev Registers proof verification result
-     * @param did Verifier DID
-     * @param _pA Proof part A
-     * @param _pB Proof part B
-     * @param _pC Proof part C
-     * @param _pubSignals Public signals
-     * Requirements:
-     * - Verifier must not be current selected peer
-     */
-    function registerResult(string memory did, uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[4] calldata _pubSignals) external {
-        require(peerRecords[did].did != peerRecords[peers[lastChosenPeerIndex]].did, "Only clients can verify");
-        
+    function registerResult(string memory did, uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[4] calldata _pubSignals) external  {
+        require(peerRecords[did].did != peerRecords[peers[lastChosenPeerIndex]].did, "Only clients can register results");            
+            
         string memory serverDID = peers[lastChosenPeerIndex];
 
-        // Register as neighbor if not already
-        if (!peerRecords[serverDID].neighbors[did]) {
+        if (!peerRecords[serverDID].neighbors[did]){
             peerRecords[serverDID].neighbors[did] = true;
             peerRecords[serverDID].n_neighbors += 1;
         }
 
         bool isVerified = verifyProof(_pA, _pB, _pC, _pubSignals);
-        emit VerifiedProof(did, isVerified);
+        emit VerifiedProof(did, isVerified); 
 
-        if (isVerified) {
+        if (isVerified){
             verificationCount[serverDID] += 1;
         }
     }
 
-    // ============ ZK-SNARK Verification ============
-    
+
+    // function registerResult(string memory did, uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[4] calldata _pubSignals) external  {
+    //         require(peerRecords[did].did != peerRecords[peers[lastChosenPeerIndex]].did, "Only clients can register results");            
+    //         string memory serverDID = peers[lastChosenPeerIndex];
+    //         if (!peerRecords[serverDID].neighbors[did]){
+    //             peerRecords[serverDID].neighbors[did] = true;
+    //             peerRecords[serverDID].n_neighbors += 1;
+    //         }
+    //         bool isVerified = verifyProof(_pA, _pB, _pC, _pubSignals);
+    //         emit VerifiedProof(did, isVerified); 
+    //         if (isVerified){
+    //             total_verified += 1;  
+    //             emit VerifiedProof(did, true);                
+    //         }else{
+    //         emit VerifiedProof(did, false);            
+    //         }
+    // }
+/*
+    Copyright 2021 0KIMS association.
+
+    This file is generated with [snarkJS](https://github.com/iden3/snarkjs).
+
+    snarkJS is a free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    snarkJS is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+    or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+    License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
+*/
+
+
     // Scalar field size
     uint256 constant r    = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
     // Base field size
@@ -519,4 +432,5 @@ contract BBYOR {
             //  return(0, 0x20)
          }
      }
-}
+ }
+
