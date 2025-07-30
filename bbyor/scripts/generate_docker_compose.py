@@ -1,7 +1,7 @@
 import random 
 import requests as rq
 from Crypto.Hash import MD5
-N_NODES = 3
+N_NODES = 20
 # Register dids
 # body 
 body = {"role":"ENDORSER","alias":None,"did":None,"seed":""}
@@ -29,7 +29,7 @@ docker_compose_file = '''
 version: '3'
 
 services:
-  postgres:
+  postgres0:
     restart: always
     image: docker.io/postgres:latest
     environment:
@@ -37,9 +37,23 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: config
     ports:
-      - "5432:5432"
+      - "5430:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data  # 🔐 Data is stored here
+    networks:
+     - bbyor
+  
+  postgres1:
+    restart: always
+    image: docker.io/postgres:latest
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_USER: postgres
+      POSTGRES_DB: config
+    ports:
+      - "5431:5432"
+    volumes:
+      - postgres1_data:/var/lib/postgresql/data  # 🔐 Data is stored here
     networks:
      - bbyor
 {0}
@@ -66,7 +80,7 @@ template_agent = '''
       --admin 0.0.0.0 {2}
       --admin-insecure-mode      
       --wallet-storage-type postgres_storage
-      --wallet-storage-config \"{{\\"url\\":\\"postgres:5432\\",\\"wallet_scheme\\":\\"DatabasePerWallet\\"}}\"
+      --wallet-storage-config \"{{\\"url\\":\\"postgres{5}:5432\\",\\"wallet_scheme\\":\\"DatabasePerWallet\\"}}\"
       --wallet-storage-creds \"{{\\"account\\":\\"postgres\\",\\"password\\":\\"mysecretpassword\\",\\"admin_account\\":\\"postgres\\",\\"admin_password\\":\\"mysecretpassword\\"}}\"
       --public-invites --auto-accept-invites --auto-accept-requests --auto-ping-connection
       --auto-respond-messages --auto-respond-credential-offer --auto-respond-presentation-request
@@ -82,7 +96,7 @@ template_agent = '''
     volumes:
       - agent{3}-data:/home/aries/.acapy_agent
     depends_on:
-      - posgres
+      - postgres{5}
 '''
 
 
@@ -150,11 +164,13 @@ for i in range(N_NODES):
     nodes += template_node.format(initial_admin_port+i, i+initial_agent_number,0,
                                 initial_api_port+i, private_keys[i], dids[i])
     
+    postgres_id = 0 if initial_agent_number+i % 2 == 0 else 1
     agents += template_agent.format(initial_endpoint_port+i, seeds[i], initial_admin_port+i,
-                                i+initial_agent_number, initial_api_port+i)
+                                i+initial_agent_number, initial_api_port+i, postgres_id)
     volumes += f"  agent{i}-data:\n"
     volumes += f"  node{i}-data:\n"
 volumes += "  postgres_data:\n"
+volumes += "  postgres1_data:\n"
 
 
 fp = open("/tmp/docker-compose.yml", "w")

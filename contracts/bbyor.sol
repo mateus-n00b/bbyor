@@ -56,13 +56,14 @@ contract BBYOR {
     uint256 public lastNonce;
     
     // Interval bounds (in seconds)
-    uint8 private upperBound = 20;
-    uint8 private lowerBound = 10;
+    uint8 private upperBound = 25;
+    uint8 private lowerBound = 15;
     
     // Reputation constants
     uint256 constant SCALE = 1000;       // Fixed-point precision scale
     uint256 constant increase_factor = 30; // Reputation increase rate (0.03)
-    uint256 constant decrease_factor = 50; // Reputation decrease rate (0.05)
+    uint256 constant decrease_factor = 35; // Reputation decrease rate (0.05)
+    uint256 constant partial_increase_factor = 10;
     uint256 private initial_rep = 350;   // Initial reputation (35%)
     uint256 private total_verified = 0;  // Total successful verifications
     bool isRunning = false;              // Active verification round flag
@@ -104,7 +105,7 @@ contract BBYOR {
      */
     function updateServerRep() public {
         require(lastChosenPeerIndex != type(uint256).max, "No peer selected yet!");
-        require(block.timestamp - lastTimestamp > lastRandomInterval, "Challenge ongoing");
+        require(block.timestamp - lastTimestamp > lastRandomInterval+1, "Challenge ongoing");
         require(isRunning, "Round finished");
 
         string memory did = peers[lastChosenPeerIndex];
@@ -121,7 +122,7 @@ contract BBYOR {
         // No responses penalty
         if (recv == 0) {
             uint256 penalty = multiply(n_nodes * SCALE, decrease_factor);
-            rep = (penalty >= rep) ? 0 : rep - penalty;
+            rep = (penalty >= rep) ? 100 : rep - penalty;
             peerRecords[did].serverRep = rep;
             emit Reduced(rep);
             return;
@@ -129,10 +130,15 @@ contract BBYOR {
 
         // Partial responses penalty
         if (recv < multiply(n_nodes, divide(2, 3))) {
-            uint256 penalty = divide((n_nodes - recv), decrease_factor);
-            rep = (penalty >= rep) ? 0 : rep - penalty;
+            // uint256 penalty = divide((n_nodes - recv), decrease_factor);
+            // rep = (penalty >= rep) ? 0 : rep - penalty;
+            // peerRecords[did].serverRep = rep;
+            // emit Reduced(rep);
+            // return;
+            uint256 reward = multiply(divide(recv, n_nodes), partial_increase_factor);
+            rep = (rep >= SCALE) ? SCALE : rep + reward; // Cap at 100%
             peerRecords[did].serverRep = rep;
-            emit Reduced(rep);
+            emit RepIncreased(rep);
             return;
         }
         // Successful responses reward
@@ -197,12 +203,23 @@ contract BBYOR {
      * Requirements:
      * - DID must not be empty
      */
+    // function registerPeer(string calldata did) external {
+    //     require(bytes(did).length > 0, "Empty DID");
+    //     peerRecords[did].did = keccak256(abi.encodePacked(did));
+    //     peerRecords[did].serverRep = initial_rep;
+    //     peerRecords[did].clientRep = initial_rep;
+    //     peerRecords[did].updated = block.timestamp;
+    //     peers.push(did);
+    // }
     function registerPeer(string calldata did) external {
         require(bytes(did).length > 0, "Empty DID");
+        require(peerRecords[did].did == bytes32(0), "Peer already registered");
+        
         peerRecords[did].did = keccak256(abi.encodePacked(did));
         peerRecords[did].serverRep = initial_rep;
         peerRecords[did].clientRep = initial_rep;
         peerRecords[did].updated = block.timestamp;
+        peerRecords[did].n_neighbors = 0; // Explicit initialization
         peers.push(did);
     }
 
@@ -220,9 +237,9 @@ contract BBYOR {
     }
 
     function getNonce() external {
-    uint256 nonce = _generateRandomIndex(9999);
-    lastNonce = nonce;
-    emit NonceCreated(nonce, msg.sender);
+        uint256 nonce = _generateRandomIndex(9999);
+        lastNonce = nonce;
+        emit NonceCreated(nonce, msg.sender);
 }
 
     /**
@@ -244,6 +261,7 @@ contract BBYOR {
     function getRandomPeer() external {
         require(peers.length > 1, "Insufficient peers");
         require(block.timestamp - lastTimestamp > lastRandomInterval+3, "Too early");
+        require(!isRunning, "Round is active");
 
         uint256 newIndex = _generateRandomIndex(peers.length);
 
@@ -293,11 +311,20 @@ contract BBYOR {
      * - Neighbor must not already exist
      */
     function registerNeighbor(string memory did, string memory did_neighbor) public returns (bool) {
-        require(!peerRecords[did].neighbors[did_neighbor], "Already neighbors");
-        peerRecords[did].neighbors[did_neighbor] = true;
-        peerRecords[did].n_neighbors += 1;
-        return true;
-    }
+        require(bytes(did).length > 0 && bytes(did_neighbor).length > 0, "Empty DID");
+        if (!peerRecords[did].neighbors[did_neighbor]) {
+            peerRecords[did].neighbors[did_neighbor] = true;
+            peerRecords[did].n_neighbors += 1;
+            
+            // Reciprocal relationship
+            if (!peerRecords[did_neighbor].neighbors[did]) {
+                peerRecords[did_neighbor].neighbors[did] = true;
+                peerRecords[did_neighbor].n_neighbors += 1;
+            }
+            return true;
+        }
+        return false;
+}
 
     /**
      * @dev Checks neighbor relationship

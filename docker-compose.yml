@@ -2,19 +2,18 @@ version: '3'
 
 services:
   postgres:
-    image: docker.io/postgres:14
     restart: always
+    image: docker.io/postgres:latest
     environment:
-      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mysecretpassword
-      POSTGRES_DB: config  
-    volumes:
-    - pgdata:/var/lib/postgresql/data
-    networks:
-    - bbyor
+      POSTGRES_USER: postgres
+      POSTGRES_DB: config
     ports:
-    - "5432:5432"
-
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # 🔐 Data is stored here
+    networks:
+     - bbyor
   agent1: 
     image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-nightly
     command: >-
