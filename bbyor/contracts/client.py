@@ -118,13 +118,13 @@ class ContractClient:
         except Exception as e:
             self.logger.info(f"[ERROR] Failed to register neighbor: {e}")
 
-    def register_result(self, proof: list):
+    def register_result(self, _round: int, proof: list):
         try:
             account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
             nonce = self.w3.eth.get_transaction_count(account.address)
 
             tx = self.contract.functions.registerResult(
-                self.did, proof[0], proof[1], proof[2], proof[3]
+                self.did, _round, proof[0], proof[1], proof[2], proof[3]
             ).build_transaction({
                 'from': account.address,
                 'nonce': nonce,
@@ -140,7 +140,8 @@ class ContractClient:
             if logs:
                 selected_peer = logs[0]['args']['did']
                 verified = logs[0]['args']['verified']
-                self.logger.info(f"Verified result: {selected_peer}, return {verified}")
+                round = logs[0]['args']['round']
+                self.logger.info(f"Verified result: {selected_peer}, return {verified} - round: {round}")
                 return verified
             else:
                 self.logger.info("No VerifiedProof event found")
@@ -150,12 +151,12 @@ class ContractClient:
             self.logger.info(f"[ERROR] Failed to register result: {e}")
             return False
         
-    def update_server_rep(self):
+    def update_server_rep(self, _round: int):
         try:
             account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
             nonce = self.w3.eth.get_transaction_count(account.address)
 
-            tx = self.contract.functions.updateServerRep().build_transaction({
+            tx = self.contract.functions.updateServerRep(_round).build_transaction({
                 'from': account.address,
                 'nonce': nonce,
                 'gas': 300000,
@@ -165,6 +166,7 @@ class ContractClient:
             signed_tx = self.signtx(tx)
             tx_hash = self.send_tx(signed_tx)
             receipt = self.get_receipt(tx_hash)    
+            
         except Exception as e:
             # self.logger.info(f"[ERROR] Failed to get peer: {e}")
             pass
@@ -191,6 +193,9 @@ class ContractClient:
         except Exception as err:
             self.logger.info(f"[ERROR] Failed to register peer: {err}")            
 
+    def get_round_receipt(self, _round: int):
+        return self.contract.functions.getReceipt(_round).call()
+
     def get_peer(self):
         try:
             account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
@@ -211,8 +216,9 @@ class ContractClient:
             if logs:
                 selected_peer = logs[0]['args']['peer']
                 interval = logs[0]['args']['interval']
-                self.logger.info(f"Selected peer: {selected_peer} at time {interval}")
-                return selected_peer, interval
+                _round = logs[0]['args']['round']
+                self.logger.info(f"Selected peer: {selected_peer} at time {interval} - round: {_round}")
+                return selected_peer, interval, _round
             else:
                 self.logger.info("No PeerSelected event found")
                 return None, None
@@ -224,3 +230,4 @@ class ContractClient:
 
 # Singleton instance
 contract_client = ContractClient()
+

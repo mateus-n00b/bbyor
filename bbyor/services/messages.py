@@ -1,9 +1,10 @@
-from .challenge import handle_challenge, handle_result
+from .challenge import handle_challenge, handle_result, handle_request
 import json 
 functions = {
     "challenge": handle_challenge,
     "fhe_result": handle_result,
-    "received": None
+    "received": None,
+    "request_challenge": handle_request
 } 
 
 def handle_messages(body):

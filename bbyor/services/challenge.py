@@ -27,9 +27,9 @@ def get_nonce():
     nonce = contract_client.get_nonce(1)
     return int(nonce)
 
-def propose_challenge(connection_ids: list = None):
-    results = get_connections()["results"]
+def propose_challenge(_round: int, connection_ids: list = None):
     if not connection_ids:
+        results = get_connections()["results"]
         connection_ids = [conn["connection_id"] for conn in results if conn["rfc23_state"] == "completed" 
                         and "their_public_did" in conn and conn["their_public_did"] != settings.PUBLIC_DID]
     a = encrypt(_random())
@@ -46,18 +46,31 @@ def propose_challenge(connection_ids: list = None):
     # generates poseidon hash for the prover
     h_poseidon = create_verifier_input(nonce=nonce, hash_result=hash)
     os.environ["LAST_HASH"] = h_poseidon # gambiarra
+    os.environ["ROUND"] = str(_round)
 
     a = serialize(a)
     # Encode a as hex
-    msg = {"type": "challenge" ,"a": a.hex(), "b": nonce, "c": h_poseidon}
+    msg = {"type": "challenge", "round": _round ,"a": a.hex(), "b": nonce, "c": h_poseidon}
     for conn in connection_ids:
         logger.info(f"Sending it to conn: {conn} - Expected hash: {hash}")
         send_message(conn, msg)
+
+def handle_request(body, msg):
+    conn_id = body["connection_id"]
+    logger.info(f"Received new request from {conn_id}")
+    _round = int(os.getenv("ROUND"))
+    # Am I still the challenger?
+    propose_challenge(_round, [conn_id])
+
+def request_challenge(conn_id: str):
+    msg = {"type": "request_challenge"}
+    send_message(conn_id, msg)    
 
 def handle_challenge(body, msg):
     a = bytes.fromhex(msg["a"])
     b = int(msg["b"])
     c_line = msg["c"]
+    _round = int(msg["round"])
     # Deserialize to FHE
     logger.info(f"Received challenge nonce {b}. Proccessing...")
     a = deserialize(a)
@@ -80,7 +93,7 @@ def handle_challenge(body, msg):
     body = {"type": "fhe_result", "proof": proof}
     send_message(conn_id, body)
     proof_fixed = hex_to_int(proof)
-    verified = contract_client.register_result(proof_fixed)
+    verified = contract_client.register_result(_round, proof_fixed)
     if  verified:
         logger.info("Result registered successfully!!!!")
 

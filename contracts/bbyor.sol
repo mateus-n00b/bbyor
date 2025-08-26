@@ -14,7 +14,7 @@ contract BBYOR {
     event OwnerSet(address indexed oldOwner, address indexed newOwner);
     
     // Peer selection events
-    event PeerSelected(string peer, uint256 interval);
+    event PeerSelected(string peer, uint256 interval, uint256 round);
     event NonceCreated(uint256 nonce, address did);
     
     // Reputation events
@@ -22,7 +22,7 @@ contract BBYOR {
     event RepIncreased(uint256 newRep);
     
     // Verification events
-    event VerifiedProof(string did, bool verified);
+    event VerifiedProof(string did, bool verified, uint256 round);
     event Debug(uint);
     
     // ============ Structs ============
@@ -40,11 +40,22 @@ contract BBYOR {
         uint256 updated;            // Last update timestamp
     }
 
+    struct roundReceipt {
+        uint256 recv;
+        string did;
+        string final_did;
+        uint256 n_nodes;
+    }
+
     // ============ State Variables ============
     
     // Contract ownership
     address private owner;
     
+    // Logger
+    mapping(uint256 => roundReceipt) _rounds; 
+    mapping(uint256 => mapping(string => uint256)) private roundRecv;
+
     // Peer management
     mapping(string => User) private peerRecords;
     string[] private peers;
@@ -56,17 +67,17 @@ contract BBYOR {
     uint256 public lastNonce;
     
     // Interval bounds (in seconds)
-    uint8 private upperBound = 25;
-    uint8 private lowerBound = 15;
+    uint8 private upperBound = 35;
+    uint8 private lowerBound = 25;
     
     // Reputation constants
     uint256 constant SCALE = 1000;       // Fixed-point precision scale
     uint256 constant increase_factor = 30; // Reputation increase rate (0.03)
     uint256 constant decrease_factor = 35; // Reputation decrease rate (0.05)
-    uint256 constant partial_increase_factor = 10;
     uint256 private initial_rep = 350;   // Initial reputation (35%)
     uint256 private total_verified = 0;  // Total successful verifications
     bool isRunning = false;              // Active verification round flag
+    uint256 private round = 0; 
     
     // Verification tracking
     mapping(string => uint256) private verificationCount;
@@ -93,6 +104,8 @@ contract BBYOR {
         return (a * SCALE) / b;
     }
 
+    // function 
+
     // ============ Reputation Management ============
     
     /**
@@ -105,14 +118,18 @@ contract BBYOR {
      */
     function updateServerRep() public {
         require(lastChosenPeerIndex != type(uint256).max, "No peer selected yet!");
-        require(block.timestamp - lastTimestamp > lastRandomInterval+1, "Challenge ongoing");
+        require(block.timestamp > lastTimestamp+lastRandomInterval+1, "Challenge ongoing");
         require(isRunning, "Round finished");
 
         string memory did = peers[lastChosenPeerIndex];
-        uint256 recv = verificationCount[did];
+        // uint256 recv = verificationCount[did];
+        uint256 recv = roundRecv[round][did];
         uint256 rep = peerRecords[did].serverRep;
         uint256 n_nodes = peerRecords[did].n_neighbors;
         peerRecords[did].updated = block.timestamp;
+        _rounds[round].recv = recv;
+        _rounds[round].final_did = did;
+        _rounds[round].n_nodes = n_nodes;
 
         // Handle case with no neighbors
         if (n_nodes == 0) n_nodes = 1;
@@ -122,7 +139,7 @@ contract BBYOR {
         // No responses penalty
         if (recv == 0) {
             uint256 penalty = multiply(n_nodes * SCALE, decrease_factor);
-            rep = (penalty >= rep) ? 100 : rep - penalty;
+            rep = (penalty >= rep) ? 0 : rep - penalty;
             peerRecords[did].serverRep = rep;
             emit Reduced(rep);
             return;
@@ -130,15 +147,10 @@ contract BBYOR {
 
         // Partial responses penalty
         if (recv < multiply(n_nodes, divide(2, 3))) {
-            // uint256 penalty = divide((n_nodes - recv), decrease_factor);
-            // rep = (penalty >= rep) ? 0 : rep - penalty;
-            // peerRecords[did].serverRep = rep;
-            // emit Reduced(rep);
-            // return;
-            uint256 reward = multiply(divide(recv, n_nodes), partial_increase_factor);
-            rep = (rep >= SCALE) ? SCALE : rep + reward; // Cap at 100%
+            uint256 penalty = divide((n_nodes - recv), decrease_factor);
+            rep = (penalty >= rep) ? 100 : rep - penalty;
             peerRecords[did].serverRep = rep;
-            emit RepIncreased(rep);
+            emit Reduced(rep);
             return;
         }
         // Successful responses reward
@@ -230,10 +242,10 @@ contract BBYOR {
      * - Must have registered peers
      * - Must have selected a peer
      */
-    function getLastChosenPeer() external view returns (string memory) {
+    function getLastChosenPeer() external view returns (string memory, uint256) {
         require(peers.length > 0, "No peers registered");
         require(lastChosenPeerIndex < peers.length, "No peer selected");
-        return peers[lastChosenPeerIndex];
+        return (peers[lastChosenPeerIndex], round);
     }
 
     function getNonce() external {
@@ -250,6 +262,15 @@ contract BBYOR {
         return lastRandomInterval;
     }
 
+    // ============ Round receipt ============
+    function getReceipt(uint256 _round) external view returns (roundReceipt memory receipt) {
+        return _rounds[_round];
+    }
+
+    function getRecv(uint256 _round, string memory _did) external view returns (uint256) {
+        return roundRecv[_round][_did];
+    }
+
     // ============ Peer Selection ============
     
     /**
@@ -260,8 +281,11 @@ contract BBYOR {
      */
     function getRandomPeer() external {
         require(peers.length > 1, "Insufficient peers");
-        require(block.timestamp - lastTimestamp > lastRandomInterval+3, "Too early");
-        require(!isRunning, "Round is active");
+        require(
+            block.timestamp >= lastTimestamp + lastRandomInterval + 3,
+            "Too early"
+        );
+        require(!isRunning, "Round is active!");
 
         uint256 newIndex = _generateRandomIndex(peers.length);
 
@@ -273,10 +297,13 @@ contract BBYOR {
         lastChosenPeerIndex = newIndex;
         lastRandomInterval = _getRandomInterval();
         lastTimestamp = block.timestamp;
-        verificationCount[peers[newIndex]] = 0; // Reset counter
+        // verificationCount[peers[newIndex]] = 0; // Reset counter
+        roundRecv[round][peers[newIndex]] = 0;
         isRunning = true; // Start new round
+        round +=1; 
+        _rounds[round].did = peers[newIndex];
 
-        emit PeerSelected(peers[newIndex], lastRandomInterval);
+        emit PeerSelected(peers[newIndex], lastRandomInterval, round);
     }
 
     // ============ Internal Helpers ============
@@ -294,7 +321,7 @@ contract BBYOR {
      * @dev Generates random interval duration
      * @return Random interval between bounds
      */
-    function _getRandomInterval() internal view returns (uint8) {
+    function _getRandomInterval() internal  view returns (uint8) {
         require(upperBound > lowerBound, "Invalid bounds");
         uint8 range = upperBound - lowerBound;
         return uint8(uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % range) + lowerBound;
@@ -359,10 +386,20 @@ contract BBYOR {
      * Requirements:
      * - Verifier must not be current selected peer
      */
-    function registerResult(string memory did, uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[4] calldata _pubSignals) external {
-        require(peerRecords[did].did != peerRecords[peers[lastChosenPeerIndex]].did, "Only clients can verify");
-        
-        string memory serverDID = peers[lastChosenPeerIndex];
+    function registerResult(string memory did, uint256 _round, uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[4] calldata _pubSignals) external {
+        // require(peerRecords[did].did != peerRecords[peers[lastChosenPeerIndex]].did, "Only clients can verify");
+        // require(_round == round, "Invalid round number"); //for debbuging
+
+        string memory serverDID = _rounds[round].did;
+
+        // 1. Garante que existe um round ativo
+        require(isRunning, "No active round");
+
+        // 2. Garante que o DID passado não seja o servidor testado
+        require(
+            keccak256(abi.encodePacked(did)) != keccak256(abi.encodePacked(serverDID)),
+            "Server cannot self-verify"
+        );
 
         // Register as neighbor if not already
         if (!peerRecords[serverDID].neighbors[did]) {
@@ -371,11 +408,13 @@ contract BBYOR {
         }
 
         bool isVerified = verifyProof(_pA, _pB, _pC, _pubSignals);
-        emit VerifiedProof(did, isVerified);
 
         if (isVerified) {
-            verificationCount[serverDID] += 1;
+            // verificationCount[serverDID] += 1;
+            roundRecv[_round][serverDID] += 1; // registra participação do verificador nesse round
         }
+
+        emit VerifiedProof(serverDID, isVerified, _round);
     }
 
     // ============ ZK-SNARK Verification ============

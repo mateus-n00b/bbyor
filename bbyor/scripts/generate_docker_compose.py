@@ -1,7 +1,7 @@
 import random 
 import requests as rq
 from Crypto.Hash import MD5
-N_NODES = 20
+N_NODES = 4
 # Register dids
 # body 
 body = {"role":"ENDORSER","alias":None,"did":None,"seed":""}
