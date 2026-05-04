@@ -155,7 +155,7 @@ contract BBYOR {
         }
         // Successful responses reward
         else {
-            uint256 reward = multiply(divide(recv, n_nodes), increase_factor);
+            uint256 reward = multiply(divide(recv, n_nodes), increase_factor * n_nodes);
             rep = (rep >= SCALE) ? SCALE : rep + reward; // Cap at 100%
             peerRecords[did].serverRep = rep;
             emit RepIncreased(rep);
@@ -401,17 +401,14 @@ contract BBYOR {
             "Server cannot self-verify"
         );
 
-        // Register as neighbor if not already
-        if (!peerRecords[serverDID].neighbors[did]) {
-            peerRecords[serverDID].neighbors[did] = true;
-            peerRecords[serverDID].n_neighbors += 1;
-        }
-
         bool isVerified = verifyProof(_pA, _pB, _pC, _pubSignals);
 
         if (isVerified) {
-            // verificationCount[serverDID] += 1;
-            roundRecv[_round][serverDID] += 1; // registra participação do verificador nesse round
+            roundRecv[_round][serverDID] += 1;
+            if (!peerRecords[serverDID].neighbors[did]) {
+                peerRecords[serverDID].neighbors[did] = true;
+                peerRecords[serverDID].n_neighbors += 1;
+            }
         }
 
         emit VerifiedProof(serverDID, isVerified, _round);
