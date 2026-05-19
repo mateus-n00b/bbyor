@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y \
 RUN pip3 install "pybind11[global]"
 	
 # Clone and build OpenFHE-development
-RUN git clone https://github.com/openfheorg/openfhe-development.git \
+RUN git clone --branch v1.2.4 https://github.com/openfheorg/openfhe-development.git \
     && cd openfhe-development \
     && mkdir build \
     && cd build \
@@ -34,7 +34,7 @@ RUN git clone https://github.com/openfheorg/openfhe-development.git \
 ENV LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
 
 # Clone and build OpenFHE-Python
-RUN git clone https://github.com/openfheorg/openfhe-python.git \
+RUN git clone --branch v0.8.10 https://github.com/openfheorg/openfhe-python.git \
     && cd openfhe-python \
     && mkdir build \
     && cd build \
@@ -45,6 +45,7 @@ RUN git clone https://github.com/openfheorg/openfhe-python.git \
 # Install openfhe as a pip package
 WORKDIR /openfhe-python
 RUN python3 setup.py sdist bdist_wheel && pip install dist/openfhe-*.whl
+#RUN pip install openfhe
 RUN pip install "fastapi[standard]" web3 tenacity pydantic_settings python-json-logger
 # For tests
 # useradd doesnt creates /home
@@ -62,7 +63,12 @@ RUN curl -sL https://nodejs.org/dist/v22.15.0/node-v22.15.0-linux-x64.tar.xz | t
     && mkdir -p ~/.npm \
     && ~/nodejs/bin/npm install -g snarkjs
 
-COPY --chown=bbyor:bbyor bbyor circuits $HOME/app/ 
+COPY --chown=bbyor:bbyor bbyor $HOME/app/
+COPY --chown=bbyor:bbyor circuits $HOME/app/
+# RUN chown -R bbyor:bbyor $HOME/app/
+
+COPY --chown=bbyor:bbyor wait-for-it.sh .
+RUN chmod +x wait-for-it.sh
 
 WORKDIR /app
 

@@ -88,7 +88,7 @@ class Settings(BaseSettings):
         description="Path to contract ABI file"
     )
 
-    POLL_INTERVAL: int = 15
+    POLL_INTERVAL: int = 1
 
     # --- Dynamic Defaults and Validation ---
     @field_validator("DEFAULT_DIR", mode="before")

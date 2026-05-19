@@ -15,7 +15,8 @@ class ContractPoller:
         self.interval = interval_sec
         self._shutdown = False
         self.logger = get_logger()
-        self.last_round = 1
+        self.last_round = 0
+        self.last_finalized_round = 0
         self.elapsed_time = datetime.now()
         self.counter = 0
         self.node_turn = False
@@ -26,9 +27,7 @@ class ContractPoller:
         while not self._shutdown:
             try:
                 did, interval, _round = contract_client.get_peer()
-                # Use contract interval if valid, else fallback to current
-                self.interval = int(interval) if interval else self.interval
-                self.interval = 1
+                self.interval = 2
                 if _round != self.last_round:
                     self.logger.info(f"Latest contract value: {did}")
                     self.last_round = _round
@@ -49,8 +48,10 @@ class ContractPoller:
                 else:
                     self.logger.error("No fallback value available from contract")
             
-            # Update server reputation (ignore output)
-            contract_client.update_server_rep(int(self.last_round))
+            # Finalize round once interval expires (retries silently until contract allows it)
+            if self.last_round > self.last_finalized_round:
+                if contract_client.update_server_rep(int(self.last_round)):
+                    self.last_finalized_round = self.last_round
             
             await asyncio.sleep(self.interval)
 
@@ -86,7 +87,11 @@ class ContractPoller:
                 if conn_id:
                     self.logger.info("Registering neighbor...")
                     contract_client.register_neighbor(did)
-                    request_challenge(conn_id)        
+                    conn_data = None
+                    while not (conn_data and conn_data.get("rfc23_state") == "completed"):
+                        conn_data = get_connections(conn_id)
+                        await asyncio.sleep(1)
+                    request_challenge(conn_id)
 
     def shutdown(self):
         """Graceful shutdown"""

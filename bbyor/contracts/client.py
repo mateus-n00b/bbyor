@@ -148,10 +148,10 @@ class ContractClient:
                 return False
 
         except Exception as e:
-            self.logger.info(f"[ERROR] Failed to register result: {e}")
+            self.logger.info(f"[ERROR] Failed to register result at round {_round}: {e}")
             return False
         
-    def update_server_rep(self, _round: int):
+    def update_server_rep(self, _round: int) -> bool:
         try:
             account = self.w3.eth.account.from_key(settings.PRIVATE_KEY)
             nonce = self.w3.eth.get_transaction_count(account.address)
@@ -165,11 +165,11 @@ class ContractClient:
 
             signed_tx = self.signtx(tx)
             tx_hash = self.send_tx(signed_tx)
-            receipt = self.get_receipt(tx_hash)    
-            
-        except Exception as e:
-            # self.logger.info(f"[ERROR] Failed to get peer: {e}")
-            pass
+            self.get_receipt(tx_hash)
+            return True
+
+        except Exception:
+            return False
     
     def get_reputation(self, did: str = None):
         did = did if did else settings.PUBLIC_DID
@@ -221,11 +221,11 @@ class ContractClient:
                 return selected_peer, interval, _round
             else:
                 self.logger.info("No PeerSelected event found")
-                return None, None
+                return None, None, None
 
         except Exception as e:
             self.logger.info(f"[ERROR] Failed to get peer: {e}")
-            return None, None
+            return None, None, None
 
 
 # Singleton instance

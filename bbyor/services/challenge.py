@@ -63,16 +63,27 @@ def handle_request(body, msg):
     propose_challenge(_round, [conn_id])
 
 def request_challenge(conn_id: str):
+    logger.info(f"Requesting challenge from {conn_id}")
     msg = {"type": "request_challenge"}
-    send_message(conn_id, msg)    
+    send_message(conn_id, msg)
 
 def handle_challenge(body, msg):
     a = bytes.fromhex(msg["a"])
     b = int(msg["b"])
     c_line = msg["c"]
     _round = int(msg["round"])
+
+    logger.info(f"Received challenge nonce {b} - round {_round}. Proccessing...")
+
+    # verify if the round still is valid
+    tup = contract_client.get_latest_value()
+    if tup:
+        _, latest_round = tup
+        if _round != int(latest_round): # if round is older ignore
+            logger.info(f"Round {_round} is older than the current one {latest_round}")
+            return
+
     # Deserialize to FHE
-    logger.info(f"Received challenge nonce {b}. Proccessing...")
     a = deserialize(a)
     c = evalAdd(a,b)
     c = serialize(c)
@@ -90,22 +101,27 @@ def handle_challenge(body, msg):
 
     conn_id = body["connection_id"] # send it back 
     logger.info(f"Sending ADD result hash {hash} to {conn_id} with proof: {proof}")        
-    body = {"type": "fhe_result", "proof": proof}
+    body = {"type": "fhe_result", "proof": proof, "round": _round}
     send_message(conn_id, body)
     proof_fixed = hex_to_int(proof)
     verified = contract_client.register_result(_round, proof_fixed)
-    if  verified:
+    if verified:
         logger.info("Result registered successfully!!!!")
+    else:
+        logger.info("Fail to register result :/")
 
 def handle_result(body, msg):
     conn_id = body["connection_id"]
-    _hash = os.getenv("LAST_HASH")    
+    _hash = os.getenv("LAST_HASH")
     proof = msg["proof"]
+    _round = msg["round"]
     proof_fixed = hex_to_int(proof)
 
-    logger.info(f"Received result from {conn_id} -> {proof_fixed} == {_hash}")
+    logger.info(f"Received result from {conn_id} for round {_round}->\n {proof_fixed} == {_hash}")
     verified = contract_client.verify(proof_fixed)
     # Changed to register_result, which updates reputation
     # verified = contract_client.register_result(proof_fixed)
-    if  verified:
+    if verified:
         logger.info("SUCCESS!!!!")
+    else:
+        logger.info("Fail to check result")

@@ -14,11 +14,12 @@ logger = get_logger()
     wait=wait_exponential(multiplier=1, min=4, max=10),
     before_sleep=lambda _: logger.warning("Retrying failed connection check...")
 )
-def get_connections() -> Optional[dict]:
+def get_connections(conn_id: str = None) -> Optional[dict]:
     """Fetch connections with retry logic"""
     try:
+        url = f"{settings.ACAPY_URL}{settings.CONNECTIONS_URL}" if not conn_id else f"{settings.ACAPY_URL}{settings.CONNECTIONS_URL}/{conn_id}"
         response = rq.get(
-            f"{settings.ACAPY_URL}{settings.CONNECTIONS_URL}",
+            url,
             timeout=5
         )
         if response.status_code != 200:

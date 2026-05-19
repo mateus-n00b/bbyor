@@ -6,7 +6,7 @@ const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 
 
 module.exports = buildModule("BbyorModule", (m) => {
-  const bbyor = m.contract("contracts/bbyor.sol:BBYOR", []);
+  const bbyor = m.contract("BBYOR", []);
   for (let index = 0; index < data.length; index++) {
     const did = data[index];
     m.call(bbyor, "registerPeer", [did], {

@@ -34,20 +34,20 @@ commands = [
     "cd {} && snarkjs wtns calculate circuit.wasm input.json witness.wtns",
 
     # 2. Power of Tau (fase 1)
-    # "snarkjs powersoftau new bn128 12 pot12_0000.ptau -v",
-    # "snarkjs powersoftau contribute pot12_0000.ptau pot12_0001.ptau --name='First contribution' -v",
+    # "cd {} && snarkjs powersoftau new bn128 12 pot12_0000.ptau -v",
+    # "cd {} && snarkjs powersoftau contribute pot12_0000.ptau pot12_0001.ptau --name='First contribution' -v",
 
     # # 3. Preparar para fase 2
-    # "snarkjs powersoftau prepare phase2 pot12_0001.ptau pot12_final.ptau -v",
+    # "cd {} && snarkjs powersoftau prepare phase2 pot12_0001.ptau pot12_final.ptau -v",
 
     # # 4. Setup groth16
-    # "snarkjs groth16 setup circuit.r1cs pot12_final.ptau circuit2_0000.zkey",
+    # "cd {} && snarkjs groth16 setup circuit.r1cs pot12_final.ptau circuit2_0000.zkey",
 
     # # 5. Contribuição na fase 2
-    # "snarkjs zkey contribute circuit2_0000.zkey circuit2_0001.zkey --name='1st Contributor Name' -v",
+    # "cd {} && narkjs zkey contribute circuit2_0000.zkey circuit2_0001.zkey --name='1st Contributor Name' -v",
 
     # # 6. Exportar chave de verificação
-    # "snarkjs zkey export verificationkey circuit2_0001.zkey verification_key.json",
+    # "cd {} && snarkjs zkey export verificationkey circuit2_0001.zkey verification_key.json",
 
     # 7. Provar
     "cd {} && snarkjs groth16 prove circuit2_0001.zkey witness.wtns proof.json public.json",
