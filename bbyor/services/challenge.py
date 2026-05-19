@@ -1,11 +1,8 @@
 import json
-import os
 from typing import List
-from .fhe import evalAdd, encrypt, deserialize, serialize 
+from .fhe import evalAdd, encrypt, deserialize, serialize
 from ..contracts.client import contract_client
 from ..config.settings import settings
-# Adicionar tag bbyor para que o agente saiba quem esta usando o servico 
-# diferenciar dos futuros nos convencionais (e.g metadata)
 from .connections import send_message, get_connections
 import random
 from ..utils.logging import get_logger
@@ -14,6 +11,9 @@ from Crypto.Hash import MD5
 from ..services.circom import create_verifier_input, create_prover_input
 
 logger = get_logger()
+
+# Maps round -> expected Poseidon hash; survives concurrent rounds
+_round_hashes: dict[int, str] = {}
 
 def _random():
     a = random.randint(settings.LOWER_BOUND, settings.UPPER_BOUND)
@@ -45,8 +45,7 @@ def propose_challenge(_round: int, connection_ids: list = None):
     
     # generates poseidon hash for the prover
     h_poseidon = create_verifier_input(nonce=nonce, hash_result=hash)
-    os.environ["LAST_HASH"] = h_poseidon # gambiarra
-    os.environ["ROUND"] = str(_round)
+    _round_hashes[_round] = h_poseidon
 
     a = serialize(a)
     # Encode a as hex
@@ -58,8 +57,7 @@ def propose_challenge(_round: int, connection_ids: list = None):
 def handle_request(body, msg):
     conn_id = body["connection_id"]
     logger.info(f"Received new request from {conn_id}")
-    _round = int(os.getenv("ROUND"))
-    # Am I still the challenger?
+    _round = int(msg.get("round", 0))
     propose_challenge(_round, [conn_id])
 
 def request_challenge(conn_id: str):
@@ -112,9 +110,9 @@ def handle_challenge(body, msg):
 
 def handle_result(body, msg):
     conn_id = body["connection_id"]
-    _hash = os.getenv("LAST_HASH")
-    proof = msg["proof"]
     _round = msg["round"]
+    _hash = _round_hashes.get(_round)
+    proof = msg["proof"]
     proof_fixed = hex_to_int(proof)
 
     logger.info(f"Received result from {conn_id} for round {_round}->\n {proof_fixed} == {_hash}")

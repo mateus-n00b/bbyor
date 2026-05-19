@@ -75,11 +75,11 @@ contract BBYOR {
     uint8 private lowerBound = 30;
 
     // Reputation constants
-    uint256 constant SCALE = 1000;       // Fixed-point precision scale
-    uint256 constant increase_factor = 30; // Reputation increase rate (0.03)
-    uint256 constant decrease_factor = 35; // Reputation decrease rate (0.05)
-    uint256 private initial_rep = 350;   // Initial reputation (35%)
-    uint256 private total_verified = 0;  // Total successful verifications
+    uint256 constant SCALE = 1000;          // Fixed-point precision scale
+    uint256 constant GROWTH_RATE = 20;      // Linear reward: up to +2% per round (recv/n * 20/1000)
+    uint256 constant DECAY_TOTAL = 500;     // Exponential penalty (recv==0):  rep *= 0.50
+    uint256 constant DECAY_PARTIAL = 800;   // Exponential penalty (recv<2/3): rep *= 0.80
+    uint256 private initial_rep = 350;      // Initial reputation (35%)
     bool isRunning = false;              // Active verification round flag
     uint256 private round = 0;
 
@@ -133,37 +133,34 @@ contract BBYOR {
         // _rounds[_round].recv = recv;
         _rounds[_round].n_nodes = n_nodes;
 
-        // Handle case with no neighbors
         if (n_nodes == 0) n_nodes = 1;
 
-        _rounds[_round].running = false; // End round
+        _rounds[_round].running = false;
         isRunning = false;
 
-        // No responses penalty
         if (recv == 0) {
-            uint256 penalty = multiply(n_nodes * SCALE, decrease_factor * 3);
-            rep = (penalty >= rep) ? 0 : rep - penalty;
+            // Total failure: strong exponential decay  rep *= 0.50
+            rep = multiply(rep, DECAY_TOTAL);
             peerRecords[did].serverRep = rep;
             emit Reduced(rep);
             return;
         }
 
-        // Partial responses penalty
-        if (recv < multiply(n_nodes, divide(2, 3))) {
-            uint256 penalty = divide((n_nodes - recv), decrease_factor);
-            rep = (penalty >= rep) ? 100 : rep - penalty;
+        // threshold = floor(2 * n_nodes / 3)
+        if (recv * 3 < n_nodes * 2) {
+            // Partial failure: moderate exponential decay  rep *= 0.80
+            rep = multiply(rep, DECAY_PARTIAL);
             peerRecords[did].serverRep = rep;
             emit Reduced(rep);
             return;
         }
-        // Successful responses reward
-        else {
-            uint256 reward = multiply(divide(recv, n_nodes), increase_factor);
-            rep = (rep >= SCALE) ? SCALE : rep + reward; // Cap at 100%
-            peerRecords[did].serverRep = rep;
-            emit RepIncreased(rep);
-            return;
-        }
+
+        // Success: linear growth proportional to response rate
+        // reward = (recv / n_nodes) * GROWTH_RATE  →  up to +2% per round
+        uint256 reward = multiply(divide(recv, n_nodes), GROWTH_RATE);
+        rep = (rep + reward >= SCALE) ? SCALE : rep + reward;
+        peerRecords[did].serverRep = rep;
+        emit RepIncreased(rep);
     }
 
     // ============ Modifiers ============
