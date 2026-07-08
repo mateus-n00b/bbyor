@@ -7,6 +7,7 @@ from signal import SIGINT, SIGTERM
 from ..contracts.client import contract_client
 from ..config.settings import settings
 from ..services.challenge import propose_challenge, request_challenge
+from ..services.baseline import propose_baseline_challenge
 from ..services.connections import establish_connection, get_connections
 from datetime import datetime
 
@@ -49,31 +50,37 @@ class ContractPoller:
                     self.logger.error("No fallback value available from contract")
             
             # Finalize round once interval expires (retries silently until contract allows it)
-            if self.last_round > self.last_finalized_round:
-                if contract_client.update_server_rep(int(self.last_round)):
-                    self.last_finalized_round = self.last_round
+            # if self.last_round > self.last_finalized_round:
+            contract_client.update_server_rep(int(self.last_round))
+                    # self.last_finalized_round = self.last_round
             
             await asyncio.sleep(self.interval)
 
+    def _propose(self, _round: int):
+        if settings.BASELINE_MODE:
+            propose_baseline_challenge(_round=_round)
+        else:
+            propose_challenge(_round=_round)
+
     async def _process_value(self, did):
-        """Override this with your business logic"""        
-        if did == settings.PUBLIC_DID:            
-            if settings.NODE_BEHAVIOUR == 1 and not self.node_turn: 
-                self.node_turn = True # is my turn?
-                
+        """Override this with your business logic"""
+        if did == settings.PUBLIC_DID:
+            if settings.NODE_BEHAVIOUR == 1 and not self.node_turn:
+                self.node_turn = True
+
                 # Fail 30% of the time
                 if not chance_30_percent(settings.SEED + self.counter):
                     self.logger.info("Good boy... For now")
-                    propose_challenge(_round=self.last_round)   
+                    self._propose(_round=self.last_round)
 
-                self.counter += 1 # increment seed
+                self.counter += 1
             elif settings.NODE_BEHAVIOUR == 2:
-                # Wait till the higher reputation to perform the attack
-                if float(contract_client.get_reputation())/1000 < 0.6:
+                # Wait till higher reputation to perform the attack
+                if float(contract_client.get_reputation()) / 1000 < 0.6:
                     self.logger.info("Good boy... For now")
-                    propose_challenge(_round=self.last_round)
+                    self._propose(_round=self.last_round)
             else:
-                propose_challenge(_round=self.last_round)
+                self._propose(_round=self.last_round)
         else:
             # reset node_turn
             self.node_turn = False

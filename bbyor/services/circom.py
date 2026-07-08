@@ -2,9 +2,11 @@ import subprocess
 from ..utils.logging import get_logger
 from ..utils.encoder import string_to_integer
 from ..config.settings import settings
+from ..utils import metrics
 import json
 
 logger = get_logger()
+
 def run_cmd(cmd, input_text=None):
     output = "OK"
     try:
@@ -27,85 +29,53 @@ def run_cmd(cmd, input_text=None):
         return None
     return output
 
-# Etapas
-
+# (op_name, command_template)
 commands = [
-    # 1. Calcular witness
-    "cd {} && snarkjs wtns calculate circuit.wasm input.json witness.wtns",
-
-    # 2. Power of Tau (fase 1)
-    # "cd {} && snarkjs powersoftau new bn128 12 pot12_0000.ptau -v",
-    # "cd {} && snarkjs powersoftau contribute pot12_0000.ptau pot12_0001.ptau --name='First contribution' -v",
-
-    # # 3. Preparar para fase 2
-    # "cd {} && snarkjs powersoftau prepare phase2 pot12_0001.ptau pot12_final.ptau -v",
-
-    # # 4. Setup groth16
-    # "cd {} && snarkjs groth16 setup circuit.r1cs pot12_final.ptau circuit2_0000.zkey",
-
-    # # 5. Contribuição na fase 2
-    # "cd {} && narkjs zkey contribute circuit2_0000.zkey circuit2_0001.zkey --name='1st Contributor Name' -v",
-
-    # # 6. Exportar chave de verificação
-    # "cd {} && snarkjs zkey export verificationkey circuit2_0001.zkey verification_key.json",
-
-    # 7. Provar
-    "cd {} && snarkjs groth16 prove circuit2_0001.zkey witness.wtns proof.json public.json",
-
-    # 8. verificar 
-    "cd {} && snarkjs groth16 verify verification_key.json public.json proof.json",
-
-    # 8. Gerar chamada Solidity/verificação
-    "cd {} && snarkjs generatecall"
+    ("snarkjs_witness", "cd {} && snarkjs wtns calculate circuit.wasm input.json witness.wtns"),
+    ("snarkjs_prove",   "cd {} && snarkjs groth16 prove circuit2_0001.zkey witness.wtns proof.json public.json"),
+    ("snarkjs_verify",  "cd {} && snarkjs groth16 verify verification_key.json public.json proof.json"),
+    ("snarkjs_call",    "cd {} && snarkjs generatecall"),
 ]
 
-def run(role='verifier') -> str:
-    # Executa os comandos
+def run(role='verifier', _round=None) -> str:
     output = None
-    dirs = {
-        "verifier": "gen_hash",
-        "prover": "checkHash"
-    }
+    dirs = {"verifier": "gen_hash", "prover": "checkHash"}
     dir = dirs[role]
-    for cmd in commands:
-        output = run_cmd(cmd.format(dir))
-        if not output:
-            break  # Para se algum comando falhar
+    for op_name, cmd in commands:
+        with metrics.record(op_name, _round=_round):
+            output = run_cmd(cmd.format(dir))
+        if output is None:
+            break
     return output
 
-def create_prover_input(nonce, hash_result, recv_result) -> str:
+def create_prover_input(nonce, hash_result, recv_result, _round=None) -> str:
     try:
         _input = {
-            "hash_result": str(string_to_integer(hash_result)),    
+            "hash_result": str(string_to_integer(hash_result)),
             "nonce": str(nonce),
             "result": str(recv_result),
             "in_did": str(string_to_integer(settings.PUBLIC_DID))
         }
-        fp = open("./checkHash/input.json", "w")
-        json.dump(_input, fp)   
-        fp.close() 
-        proof = run("prover")    
-
+        with open("./checkHash/input.json", "w") as fp:
+            json.dump(_input, fp)
+        proof = run("prover", _round=_round)
         return proof
     except Exception as err:
         logger.error(err)
-        return None  
-    
-def create_verifier_input(nonce, hash_result) -> str:
-    try:
-        _input ={
-        "result": str(string_to_integer(hash_result)),    
-        "nonce": str(nonce)
-        }
-        fp = open("./gen_hash/input.json", "w")
-        json.dump(_input, fp)    
-        fp.close()  
+        return None
 
-        # Run 
-        run()   
-        public = json.load(open("./gen_hash/public.json"))        
+def create_verifier_input(nonce, hash_result, _round=None) -> str:
+    try:
+        _input = {
+            "result": str(string_to_integer(hash_result)),
+            "nonce": str(nonce)
+        }
+        with open("./gen_hash/input.json", "w") as fp:
+            json.dump(_input, fp)
+        run("verifier", _round=_round)
+        public = json.load(open("./gen_hash/public.json"))
         return public[0]
     except Exception as err:
         logger.error(err)
-        return None  
+        return None
     

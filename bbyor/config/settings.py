@@ -90,6 +90,12 @@ class Settings(BaseSettings):
 
     POLL_INTERVAL: int = 1
 
+    BASELINE_MODE: bool = Field(
+        default=bool(int(os.getenv("BASELINE_MODE", "0"))),
+        description="Run baseline SHA256+sign protocol instead of FHE+ZKP",
+        env="BASELINE_MODE"
+    )
+
     # --- Dynamic Defaults and Validation ---
     @field_validator("DEFAULT_DIR", mode="before")
     def set_default_dir(cls, v, values):
