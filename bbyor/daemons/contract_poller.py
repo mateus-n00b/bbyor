@@ -88,7 +88,8 @@ class ContractPoller:
             # NOTE: implement some kind of flag to this (AUTO_CONNECT = True)
             # Problem: acapy doesnt prevent redudant connections
             # NOTE: if there is no connections active -> fail 
-            my_connections = get_connections()["results"]
+            # BUG: Sometimes the did does not exists and condition fails 
+            my_connections = get_connections()["results"] 
             if did not in str(my_connections):
                 conn_id = establish_connection(did)
                 if conn_id:
