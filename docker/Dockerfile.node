@@ -11,7 +11,7 @@ ARG OPENFHE_VERSION
 ARG OPENFHE_PYTHON_VERSION
 RUN apt-get update && apt-get install -y --no-install-recommends cmake build-essential git \
     && rm -rf /var/lib/apt/lists/*
-RUN pip install --no-cache-dir "pybind11[global]" setuptools wheel
+RUN pip install --no-cache-dir "pybind11[global]"
 RUN git clone --depth 1 --branch ${OPENFHE_VERSION} https://github.com/openfheorg/openfhe-development.git /src/openfhe \
     && cmake -S /src/openfhe -B /src/openfhe/build -DBUILD_UNITTESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_BENCHMARKS=OFF \
     && cmake --build /src/openfhe/build -j"$(nproc)" \
@@ -19,20 +19,20 @@ RUN git clone --depth 1 --branch ${OPENFHE_VERSION} https://github.com/openfheor
 RUN git clone --depth 1 --branch ${OPENFHE_PYTHON_VERSION} https://github.com/openfheorg/openfhe-python.git /src/openfhe-python \
     && cmake -S /src/openfhe-python -B /src/openfhe-python/build \
     && cmake --build /src/openfhe-python/build -j"$(nproc)" \
-    && cmake --install /src/openfhe-python/build \
-    && cd /src/openfhe-python && python setup.py bdist_wheel -d /wheels
+    && cp /src/openfhe-python/build/openfhe.cpython-*.so /src/openfhe-python/openfhe/openfhe.so
 
 # ---------- Runtime ----------
 FROM python:3.12-slim-bookworm
 COPY --from=openfhe /usr/local/lib/libOPENFHE* /usr/local/lib/
-COPY --from=openfhe /wheels /wheels
+# Same Python minor version in both stages, so the extension can be copied as is
+COPY --from=openfhe /src/openfhe-python/openfhe /usr/local/lib/python3.12/site-packages/openfhe
 COPY --from=node:22-bookworm-slim /usr/local/bin/node /usr/local/bin/node
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/* \
     && ldconfig
 
 WORKDIR /app
 COPY node/ /src/node/
-RUN pip install --no-cache-dir /wheels/*.whl /src/node && rm -rf /src/node
+RUN pip install --no-cache-dir /src/node && rm -rf /src/node
 
 # zk.js and its runtime dependencies (no Hardhat)
 COPY --from=node:22-bookworm-slim /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm

@@ -75,7 +75,9 @@ class FheScheme:
     def challenge(self, secret: int, nonce: int) -> tuple[str, int]:
         ct = self._cc.Encrypt(self._public_key, self._cc.MakePackedPlaintext([secret]))
         payload = self._fhe.Serialize(ct, self._fhe.BINARY).hex()
-        return payload, to_field(self._add(ct, nonce))
+        # A fresh ciphertext serializes differently from a deserialized one, so
+        # derive the expected result exactly the way verifiers will
+        return payload, self.respond(payload, nonce)
 
     def respond(self, payload: str, nonce: int) -> int:
         ct = self._fhe.DeserializeCiphertextString(bytes.fromhex(payload), self._fhe.BINARY)
