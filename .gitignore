@@ -213,3 +213,9 @@ input.json
 
 # Solidity verifier (optional: if you generate it automatically)
 verifier.sol
+
+# BBYOR v2 build outputs
+circuits/build/
+contracts/src/generated/
+sim/out/
+metrics*.jsonl
