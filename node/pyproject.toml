@@ -1,0 +1,33 @@
+[project]
+name = "bbyor"
+version = "2.0.0"
+description = "BBYOR node: reputation rounds over DIDComm with FHE challenges and ZK attestations"
+requires-python = ">=3.11"
+license = { text = "GPL-3.0" }
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "httpx>=0.28",
+    "web3>=7.10,<8",
+    "pydantic>=2.11",
+    "pydantic-settings>=2.9",
+]
+
+[project.optional-dependencies]
+# OpenFHE has no portable wheel; docker/Dockerfile.node builds it from source
+fhe = ["openfhe"]
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.25"]
+
+[project.scripts]
+bbyor-node = "bbyor.app:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = ["integration: needs node, hardhat and built circuits"]
