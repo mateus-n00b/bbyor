@@ -55,6 +55,9 @@ class NetAgent:
     async def active_connections(self):
         return {d: f"{self.did}>{d}" for d in self.net.nodes if d != self.did}
 
+    async def inbound_connections(self):
+        return list((await self.active_connections()).values())
+
     async def connection(self, conn_id):
         return {"their_public_did": conn_id.split(">")[1]}
 

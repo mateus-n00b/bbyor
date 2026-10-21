@@ -40,21 +40,22 @@ def chain():
     return c
 
 
-async def test_server_commits_and_sends_to_registered_peers_only(chain, tmp_path):
-    agent = FakeAgent({"did:1": "c1", "did:2": "c2", "did:stranger": "cx"})
+async def test_server_commits_and_sends_over_inbound_connections(chain, tmp_path):
+    # Outbound connections are where *we* authenticate others; peers trust the ones they opened
+    agent = FakeAgent({"did:1": "out1"}, inbound=["in1", "in2"])
     node = make_node(chain, SERVER, agent, tmp_path=tmp_path)
 
     await node.on_round_started(1, SERVER.address, "did:0", 77, 0)
 
     assert len(chain.commits) == 1 and chain.commits[0][:2] == (SERVER.address, 1)
-    assert sorted(c for c, _ in agent.sent) == ["c1", "c2"]
+    assert sorted(c for c, _ in agent.sent) == ["in1", "in2"]
     ops = [json.loads(l)["operation"] for l in (tmp_path / "m.jsonl").read_text().splitlines()]
     assert ops == ["challenge_create", "zk_commit", "chain_commit"]
 
 
 async def test_strategic_server_withholds(chain):
     chain.reputations[SERVER.address] = 700
-    agent = FakeAgent({"did:1": "c1"})
+    agent = FakeAgent(inbound=["c1"])
     node = make_node(chain, SERVER, agent, behaviour=OnOff(600))
 
     await node.on_round_started(1, SERVER.address, "did:0", 77, 0)
@@ -64,7 +65,7 @@ async def test_strategic_server_withholds(chain):
 
 async def serve(chain):
     """Runs the server side and returns the challenge content it sent."""
-    agent = FakeAgent({"did:1": "c1"})
+    agent = FakeAgent(inbound=["c1"])
     server = make_node(chain, SERVER, agent)
     await server.on_round_started(1, SERVER.address, "did:0", 77, 0)
     return server, agent, agent.sent[0][1]
@@ -122,7 +123,7 @@ async def test_server_replays_challenge_on_request(chain):
 
 
 async def test_signature_baseline_roundtrip(chain, tmp_path):
-    server_agent = FakeAgent({"did:1": "c1"})
+    server_agent = FakeAgent(inbound=["c1"])
     server = make_node(chain, SERVER, server_agent, attestation=Attestation.SIGNATURE, tmp_path=tmp_path)
     await server.on_round_started(1, SERVER.address, "did:0", 77, 0)
     assert chain.commits == []  # baseline never touches the chain

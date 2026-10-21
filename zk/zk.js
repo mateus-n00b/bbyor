@@ -40,6 +40,8 @@ async function prove({ result, nonce, commitment, verifier }) {
 
 // JSON-lines server: {"id", "op": "commit"|"prove", "args": {...}} -> {"id", "ok", "value"|"error"}
 async function serve() {
+  // Building the Poseidon tables takes ~250 ms; keep it out of the first request
+  poseidon ??= await buildPoseidon();
   const rl = readline.createInterface({ input: process.stdin });
   for await (const line of rl) {
     if (!line.trim()) continue;

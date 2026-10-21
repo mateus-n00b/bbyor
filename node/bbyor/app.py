@@ -49,11 +49,16 @@ def build_node(settings: Settings) -> Node:
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings()
     logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         node = build_node(settings)
         app.state.node = node
+        if node.zk:
+            # Started eagerly so the first round's timings exclude process startup
+            await node.zk.start()
+        await node.agent.wait_ready()
         await connect_to_peers(node)
         loop = asyncio.create_task(node.run())
         yield

@@ -1,0 +1,12 @@
+# Short end-to-end check: 4 honest nodes, FHE + ZK, ~20 s rounds
+seed = 1
+scheme = "fhe"
+attestation = "zk"
+min_interval = 15
+max_interval = 20
+von_network = "http://localhost:9000"
+api_port_base = 8100
+
+[[nodes]]
+count = 4
+behaviour = "honest"

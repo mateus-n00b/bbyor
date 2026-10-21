@@ -129,7 +129,9 @@ class Node:
 
         secret = self.rng.randint(*self.challenge_range)
         with self.metrics.record("challenge_create", round=round_id, scheme=self.scheme.name):
-            payload, result = await asyncio.to_thread(self.scheme.challenge, secret, nonce)
+            # Runs on the event loop thread on purpose: OpenFHE deadlocks when first
+            # used from a worker thread, and each call takes only ~10 ms
+            payload, result = self.scheme.challenge(secret, nonce)
 
         if self.attestation == Attestation.ZK:
             with self.metrics.record("zk_commit", round=round_id):
@@ -141,12 +143,14 @@ class Node:
         self._served[round_id] = msg
         self._expected[round_id] = result
 
-        peers = set(await self.chain.peer_dids()) - {self.did}
-        conns = await self.agent.active_connections()
+        # Verifiers only trust the connection they opened to our public DID, so
+        # reply over inbound connections; non-peers may receive it but cannot prove
+        conns = await self.agent.inbound_connections()
         content = msg.model_dump_json()
-        for did in peers & conns.keys():
-            await self.agent.send(conns[did], content)
-        log.info("round %s: challenge sent to %d/%d peers", round_id, len(peers & conns.keys()), len(peers))
+        for conn_id in conns:
+            await self.agent.send(conn_id, content)
+        log.info("round %s: challenge sent over %d connections (%d eligible peers)",
+                 round_id, len(conns), (await self.chain.get_round(round_id)).eligible)
 
     # ============ DIDComm messages ============
 
@@ -184,7 +188,7 @@ class Node:
 
     async def _attest(self, conn_id: str, msg: Challenge, r) -> None:
         with self.metrics.record("challenge_respond", round=msg.round, scheme=self.scheme.name):
-            result = await asyncio.to_thread(self.scheme.respond, msg.payload, r.nonce)
+            result = self.scheme.respond(msg.payload, r.nonce)
 
         if self.attestation == Attestation.ZK:
             with self.metrics.record("zk_prove", round=msg.round):

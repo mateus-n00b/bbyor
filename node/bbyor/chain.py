@@ -93,6 +93,9 @@ class Chain:
                 "from": self.address,
                 "nonce": await self.w3.eth.get_transaction_count(self.address, "pending"),
             })
+            # The estimate runs against the current block; advance() takes a different
+            # (randomness-dependent) path in the block that actually includes it
+            tx["gas"] = tx["gas"] * 6 // 5
             signed = self.account.sign_transaction(tx)
             tx_hash = await self.w3.eth.send_raw_transaction(signed.raw_transaction)
         return await self.w3.eth.wait_for_transaction_receipt(tx_hash)

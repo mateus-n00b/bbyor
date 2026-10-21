@@ -26,12 +26,18 @@ Diferenças em relação à versão anterior:
 
 | Ferramenta | Versão testada |
 |---|---|
-| Docker + Compose (v1.29+ ou plugin v2) | 29 / 1.29.2 |
-| Node.js + npm | 20.x |
-| circom | 2.2.x |
+| Docker | 29.1.3 |
+| Compose | docker-compose 1.29.2 (o plugin v2 também lê o arquivo gerado) |
+| Node.js + npm | 20.18 |
+| circom | 2.2.3 |
 | Python + [uv](https://docs.astral.sh/uv/) | 3.12 |
 
 OpenFHE só é compilado dentro da imagem do nó.
+
+> **docker-compose 1.29 + Docker 29**: recriar um container depois de
+> reconstruir a imagem falha com `KeyError: 'ContainerConfig'`. Rode
+> `docker-compose down` antes de `up` (o mesmo vale para o `./manage start`
+> do von-network; atenção, `./manage down` **apaga** os volumes do ledger).
 
 ---
 

@@ -53,13 +53,17 @@ class FakeChain:
 
 
 class FakeAgent:
-    def __init__(self, connections: dict[str, str] | None = None):
-        self.connections = dict(connections or {})  # their did -> conn id
+    def __init__(self, connections: dict[str, str] | None = None, inbound: list[str] | None = None):
+        self.connections = dict(connections or {})  # their public did -> conn id (opened by us)
+        self.inbound = list(inbound or [])          # conn ids opened by others
         self.sent: list[tuple[str, str]] = []
         self.connected: list[str] = []
 
     async def active_connections(self):
         return dict(self.connections)
+
+    async def inbound_connections(self):
+        return list(self.inbound)
 
     async def connection(self, conn_id):
         did = next((d for d, c in self.connections.items() if c == conn_id), None)
