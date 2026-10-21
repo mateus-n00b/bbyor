@@ -1,9 +1,0 @@
-FROM node:alpine
-
-WORKDIR /app
-COPY package.json ./
-COPY . ./
-RUN npm install
-
-# ENTRYPOINT [ "sh", "-c", "npx hardhat node --hostname 0.0.0.0 --port 8545" ]
-ENTRYPOINT [ "sh", "-c", "npx ganache -h 0.0.0.0 --chain.chainId 1337 --server.port 8545 --miner.defaultGasPrice 0 --miner.defaultTransactionGasLimit 30000000  --wallet.totalAccounts 20 --miner.blockTime 1 -s 1234" ]

@@ -1,0 +1,54 @@
+# BBYOR node: FastAPI + OpenFHE (built from source) + snarkjs.
+# Expects circuits/build/ to exist on the host (npm run build:circuits) so the
+# proving key matches the verifier deployed by Dockerfile.chain.
+
+ARG OPENFHE_VERSION=v1.2.4
+ARG OPENFHE_PYTHON_VERSION=v0.8.10
+
+# ---------- OpenFHE ----------
+FROM python:3.12-bookworm AS openfhe
+ARG OPENFHE_VERSION
+ARG OPENFHE_PYTHON_VERSION
+RUN apt-get update && apt-get install -y --no-install-recommends cmake build-essential git \
+    && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir "pybind11[global]" setuptools wheel
+RUN git clone --depth 1 --branch ${OPENFHE_VERSION} https://github.com/openfheorg/openfhe-development.git /src/openfhe \
+    && cmake -S /src/openfhe -B /src/openfhe/build -DBUILD_UNITTESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_BENCHMARKS=OFF \
+    && cmake --build /src/openfhe/build -j"$(nproc)" \
+    && cmake --install /src/openfhe/build
+RUN git clone --depth 1 --branch ${OPENFHE_PYTHON_VERSION} https://github.com/openfheorg/openfhe-python.git /src/openfhe-python \
+    && cmake -S /src/openfhe-python -B /src/openfhe-python/build \
+    && cmake --build /src/openfhe-python/build -j"$(nproc)" \
+    && cmake --install /src/openfhe-python/build \
+    && cd /src/openfhe-python && python setup.py bdist_wheel -d /wheels
+
+# ---------- Runtime ----------
+FROM python:3.12-slim-bookworm
+COPY --from=openfhe /usr/local/lib/libOPENFHE* /usr/local/lib/
+COPY --from=openfhe /wheels /wheels
+COPY --from=node:22-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/* \
+    && ldconfig
+
+WORKDIR /app
+COPY node/ /src/node/
+RUN pip install --no-cache-dir /wheels/*.whl /src/node && rm -rf /src/node
+
+# zk.js and its runtime dependencies (no Hardhat)
+COPY --from=node:22-bookworm-slim /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
+COPY package.json package-lock.json ./
+RUN node /usr/local/lib/node_modules/npm/bin/npm-cli.js ci --omit=dev --ignore-scripts \
+    && rm -rf /usr/local/lib/node_modules/npm /root/.npm
+COPY zk/ zk/
+COPY circuits/build/response_js/response.wasm circuits/build/response_js/
+COPY circuits/build/response.zkey circuits/build/
+
+RUN useradd --create-home bbyor && mkdir -p /app/sim/out && chown -R bbyor /app
+USER bbyor
+ENV KEY_DIR=/home/bbyor/.config/bbyor \
+    METRICS_FILE=/home/bbyor/metrics.jsonl \
+    ZK_SCRIPT=/app/zk/zk.js \
+    DEPLOYMENT_FILE=/app/sim/out/deployment.json
+
+EXPOSE 8000
+CMD ["bbyor-node"]

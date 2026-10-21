@@ -7,6 +7,7 @@ import asyncio
 import json
 import os
 import random
+import signal
 import socket
 import subprocess
 from pathlib import Path
@@ -76,7 +77,8 @@ def deployment(tmp_path_factory):
     out = tmp_path_factory.mktemp("chain")
     port = free_port()
     url = f"http://127.0.0.1:{port}"
-    hh = subprocess.Popen(["npx", "hardhat", "node", "--port", str(port)], cwd=ROOT,
+    # Own process group: terminating npx alone would leave the hardhat child running
+    hh = subprocess.Popen(["npx", "hardhat", "node", "--port", str(port)], cwd=ROOT, start_new_session=True,
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         peers = [{"account": Account.from_key(k).address, "did": f"did:sov:node{i}"} for i, k in enumerate(KEYS)]
@@ -91,7 +93,7 @@ def deployment(tmp_path_factory):
             pytest.fail("deploy failed")
         yield url, out / "deployment.json", peers
     finally:
-        hh.terminate()
+        os.killpg(hh.pid, signal.SIGTERM)
         hh.wait()
 
 

@@ -1,0 +1,9 @@
+**/node_modules
+**/.venv
+**/__pycache__
+.git
+cache
+artifacts
+sim/out
+circuits/build/*.ptau
+circuits/build/*.r1cs

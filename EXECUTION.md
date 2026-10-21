@@ -1,37 +1,41 @@
 # BBYOR — Guia de Execução
 
-## Visão Geral do Fluxo
+## Visão geral
 
 ```
-[Von Network (Indy Ledger)]
-         ↓
-[Registrar DIDs + Gerar docker-compose]
-         ↓
-[Deploy do Smart Contract (Hardhat)]
-         ↓
-[Build da imagem Docker]
-         ↓
-[Subir ACA-Py Agents + Nós BBYOR]
-         ↓
-[Coleta de dados (opcional)]
+[Von Network (ledger Indy)]
+          ↓
+[build dos circuitos + imagens]
+          ↓
+[sim/generate.py: registra DIDs, atribui contas, gera compose]
+          ↓
+[docker compose up: chain → deploy → agents + nodes]
+          ↓
+[coleta de reputação e métricas]
 ```
+
+Diferenças em relação à versão anterior:
+
+- Não é preciso copiar endereço de contrato nem DIDs à mão. O serviço `deploy`
+  grava `sim/out/deployment.json`, que os nós leem, e os peers vêm do
+  registro on-chain (o `genesis_openfhe.json` deixou de existir).
+- Cada nó tem a sua própria conta Ethereum (derivada do mnemônico do Hardhat).
+- Os agentes se comunicam pela rede do compose; não existe mais `HOST_IP`.
 
 ## Pré-requisitos
 
-| Ferramenta | Versão testada | Instalação |
-|---|---|---|
-| Docker + Docker Compose | 24+ | [docs.docker.com](https://docs.docker.com/get-docker/) |
-| Node.js + npm | 22.x | Incluso na imagem Docker |
-| Python | 3.10+ | Necessário apenas para scripts locais |
-| Hardhat | — | `npm install` na raiz |
+| Ferramenta | Versão testada |
+|---|---|
+| Docker + Compose (v1.29+ ou plugin v2) | 29 / 1.29.2 |
+| Node.js + npm | 20.x |
+| circom | 2.2.x |
+| Python + [uv](https://docs.astral.sh/uv/) | 3.12 |
 
-> **Nota**: OpenFHE e snarkjs são instalados automaticamente pelo `Dockerfile.api`. Não é necessário instalá-los no host.
+OpenFHE só é compilado dentro da imagem do nó.
 
 ---
 
-## Passo 1 — Iniciar o Ledger Indy (Von Network)
-
-O Von Network provê o ledger Hyperledger Indy local necessário para os agentes ACA-Py.
+## Passo 1 — Von Network
 
 ```bash
 git clone https://github.com/bcgov/von-network.git
@@ -40,225 +44,116 @@ cd von-network
 ./manage start --logs
 ```
 
-Aguarde até o painel estar disponível em `http://localhost:9000`.
+Aguarde o painel em `http://localhost:9000`.
 
----
-
-## Passo 2 — Registrar DIDs e Gerar o `docker-compose.yml`
-
-O script `generate_docker_compose.py` registra os DIDs no ledger e gera o arquivo de orquestração completo.
+## Passo 2 — Circuitos e imagens
 
 ```bash
-cd /caminho/para/bbyor
-
-# Instalar dependências locais para rodar o script
-pip install requests pycryptodome
-
-# Executar o gerador (requer Von Network ativo)
-python -m bbyor.scripts.generate_docker_compose
-```
-
-O arquivo gerado é salvo em `/tmp/docker-compose.yml`. Copie-o para a raiz do projeto:
-
-```bash
-cp /tmp/docker-compose.yml ./docker-compose.yml
-```
-
-O script também imprime os seeds e DIDs gerados. Atualize o arquivo `bbyor/contracts/genesis_openfhe.json` com os DIDs na ordem em que foram gerados:
-
-```json
-[
-    "DID_DO_NO_0",
-    "DID_DO_NO_1",
-    "DID_DO_NO_2",
-    "DID_DO_NO_3"
-]
-```
-
-> Para controlar o número de nós, edite `N_NODES` no topo do script. O comportamento dos nós (`NODE_BEHAVIOUR`) é definido no template — por padrão os primeiros dois são honestos (0), e os demais são atacantes (1 e 2). Ajuste conforme necessário.
-
----
-
-## Passo 3 — Deploy do Smart Contract
-
-```bash
-# Instalar dependências do Hardhat
 npm install
+npm run build:circuits     # gera circuits/build/ e contracts/src/generated/Groth16Verifier.sol
 
-# Iniciar o nó Ethereum local (em outro terminal)
-npx hardhat node
-
-# Em outro terminal: compilar e fazer deploy
-npx hardhat clean
-npx hardhat compile
-npx hardhat ignition deploy ignition/modules/Lock.js --network localhost
+docker build -f docker/Dockerfile.chain -t bbyor-chain:dev .
+docker build -f docker/Dockerfile.node  -t bbyor-node:dev .   # demora: compila OpenFHE
 ```
 
-O endereço do contrato será exibido no terminal. Guarde-o para o próximo passo.
+> Rode `build:circuits` **antes** das duas imagens: a chave de prova
+> (`response.zkey`) do nó precisa corresponder ao verificador do contrato.
+> Se refizer o setup, reconstrua as duas imagens.
 
+## Passo 3 — Cenário
+
+Edite ou copie `sim/scenarios/default.toml`:
+
+```toml
+scheme = "fhe"          # fhe | plain
+attestation = "zk"      # zk | signature (baseline)
+min_interval = 30
+max_interval = 40
+
+[[nodes]]
+count = 2
+behaviour = "honest"
+
+[[nodes]]
+count = 1
+behaviour = "intermittent"
+fail_probability = 0.3
+
+[[nodes]]
+count = 1
+behaviour = "on_off"
+attack_threshold = 600
 ```
-Deployed Addresses
-BBYOR#BBYOR - 0x5FbDB2315678afecb367f032d93F642f64180aa3
-```
 
----
-
-## Passo 4 — Configurar Variáveis de Ambiente
-
-Crie um arquivo `.env` na raiz do projeto:
+Gere o ambiente (o von-network precisa estar no ar):
 
 ```bash
-# IP da máquina host (visível pelos containers)
-export HOST_IP=$(hostname -I | awk '{print $1}')
-
-# Endereço do contrato deployado no passo anterior
-export CONTRACT_ADDR=0x5FbDB2315678afecb367f032d93F642f64180aa3
+cd node && uv sync && cd ..
+uv run --project node python sim/generate.py sim/scenarios/default.toml
 ```
 
-Ou exporte diretamente no shell:
+Saída em `sim/out/`: `peers.json`, `docker-compose.yml` e `.env`.
+
+## Passo 4 — Subir
 
 ```bash
-export HOST_IP=$(hostname -I | awk '{print $1}')
-export CONTRACT_ADDR=<endereço_do_deploy>
+cd sim/out
+docker compose up -d        # ou docker-compose up -d
+docker compose logs -f node0
 ```
 
----
+Ordem de inicialização: `chain` → `deploy` (registra os peers e grava
+`deployment.json`) → `agentN` + `nodeN`. O `node0` é o keeper: ele chama
+`advance()` sempre que uma rodada pode ser fechada.
 
-## Passo 5 — Build da Imagem Docker
+Estado de um nó:
 
 ```bash
-docker build -f docker/Dockerfile.api -t bbyor .
+curl localhost:8100/status    # node0; nodeN em api_port_base + N
 ```
 
-> O build demora alguns minutos na primeira vez pois compila o OpenFHE do zero.
-
----
-
-## Passo 6 — Subir os Agentes e Nós
-
-```bash
-docker-compose up -d
-```
-
-Isso inicializa, para cada nó:
-- Um agente **ACA-Py** (identidade DID, transporte de mensagens)
-- Um **nó BBYOR** (FastAPI + poller do contrato + FHE + ZK)
-
-Verificar os logs:
-
-```bash
-# Logs de todos os serviços
-docker-compose logs -f
-
-# Logs de um nó específico
-docker-compose logs -f node0
-docker-compose logs -f node1
-```
-
-Os nós estão prontos quando a linha abaixo aparecer nos logs:
-
-```
-INFO  - Starting contract poller daemon
-```
-
-### Portas expostas por padrão (4 nós)
-
-| Serviço | Porta | Descrição |
-|---|---|---|
-| node0 | 8001 | Webhook / API BBYOR |
-| node1 | 8002 | Webhook / API BBYOR |
-| node2 | 8003 | Webhook / API BBYOR |
-| node3 | 8004 | Webhook / API BBYOR |
-| agent0 | 8150 / 8250 | Endpoint / Admin ACA-Py |
-| agent1 | 8151 / 8251 | Endpoint / Admin ACA-Py |
-| agent2 | 8152 / 8252 | Endpoint / Admin ACA-Py |
-| agent3 | 8153 / 8253 | Endpoint / Admin ACA-Py |
-
----
-
-## Passo 7 — Coleta de Dados (Simulação)
-
-Com o ambiente rodando, inicie a coleta de métricas de reputação:
-
-```bash
-CONTRACT_ADDR=<endereço> \
-CONTRACT_ABI_PATH=bbyor/contracts/artifacts/abi.json \
-GENESIS_FHE=bbyor/contracts/genesis_openfhe.json \
-python -m bbyor.services.collect_data
-```
-
-Os dados são gravados em tempo real em `/tmp/data.csv` no formato:
-
-```
-<tempo_segundos>,<DID>,<reputação>
-12.3,18q1r8BkyTQLMKC7XxPuG,0.35
-25.1,AQjRaYC89jBJL4e7SEYwaP,0.41
-```
-
-Encerre com `Ctrl+C`. Um snapshot JSON também é salvo em `/tmp/data.json`.
-
----
-
-## Comportamentos dos Nós
-
-Configurado via variável `NODE_BEHAVIOUR` em cada serviço no `docker-compose.yml`:
-
-| Valor | Comportamento |
+| Serviço | Porta no host |
 |---|---|
-| `0` | Honesto — sempre propõe o desafio quando selecionado |
-| `1` | Falho — falha em propor o desafio 30% das vezes |
-| `2` | Atacante estratégico — age honestamente até atingir reputação 0.6, depois para de propor |
+| chain (Hardhat) | 8545 |
+| nodeN | `api_port_base` + N (padrão 8100) |
 
----
+## Passo 5 — Coleta
 
-## Resetar o Ambiente
-
-```bash
-# Parar e remover containers + volumes
-docker-compose down -v
-
-# Rebuildar e subir novamente
-docker-compose up -d --build
-```
-
-Para resetar apenas o estado do ledger, reinicie o Von Network:
+Reputação por rodada (CSV):
 
 ```bash
-cd von-network
-./manage stop
-./manage start
+uv run --project node python experiments/collect_reputation.py --out reputation.csv
 ```
 
-Após reiniciar o ledger, repita a partir do **Passo 2** (os DIDs precisam ser re-registrados).
+Métricas de latência dos nós (JSONL) e gráficos:
 
----
-
-## Estrutura Relevante do Projeto
-
+```bash
+experiments/collect_metrics.sh out/fhe_zk
+python3 experiments/plot_metrics.py out/fhe_zk/metrics_all.jsonl fhe.png
 ```
-bbyor/
-├── bbyor/
-│   ├── api/routers/         # Webhooks FastAPI (mensagens ACA-Py)
-│   ├── config/
-│   │   ├── settings.py      # Configurações via variáveis de ambiente
-│   │   └── provision.py     # Inicialização: chaves FHE + conexões
-│   ├── contracts/
-│   │   ├── client.py        # Interface Web3 com o contrato
-│   │   └── genesis_openfhe.json  # DIDs dos nós participantes
-│   ├── daemons/
-│   │   └── contract_poller.py    # Loop principal: polling + desafio + reputação
-│   ├── services/
-│   │   ├── challenge.py     # Lógica do protocolo de desafio FHE
-│   │   ├── circom.py        # Geração e verificação de provas ZK
-│   │   └── fhe.py           # Operações homomórficas (OpenFHE/BFV)
-│   └── scripts/
-│       └── generate_docker_compose.py  # Gerador de ambiente
-├── circuits/
-│   ├── checkHash/           # Circuito do provador (verifica hash FHE)
-│   └── gen_hash/            # Circuito do challenger (gera hash de referência)
-├── contracts/
-│   └── bbyor.sol            # Contrato principal (reputação + ZK on-chain)
-├── docker/
-│   └── Dockerfile.api       # Imagem com OpenFHE + snarkjs + FastAPI
-└── docker-compose.yml       # Gerado pelo script do Passo 2
+
+Para comparar com o baseline, gere um cenário com `scheme = "plain"` e
+`attestation = "signature"`, repita a coleta e rode:
+
+```bash
+python3 experiments/plot_metrics.py out/fhe_zk/metrics_all.jsonl \
+    --baseline out/baseline/metrics_all.jsonl comparison.png
 ```
+
+(`plot_metrics.py` precisa de numpy, scipy e matplotlib.)
+
+## Comportamentos
+
+| `behaviour` | Efeito quando o nó é sorteado servidor |
+|---|---|
+| `honest` | sempre publica o commitment e envia o desafio |
+| `intermittent` | deixa de servir com probabilidade `fail_probability` (determinístico por `seed` e rodada) |
+| `on_off` | serve enquanto a reputação estiver abaixo de `attack_threshold` (0–1000) e depois para |
+
+## Resetar
+
+```bash
+cd sim/out && docker compose down -v
+```
+
+Se o ledger for reiniciado, rode o Passo 3 de novo para re-registrar os DIDs.

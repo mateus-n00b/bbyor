@@ -179,7 +179,10 @@ class Node:
             log.warning("round %s: scheme %s, expected %s", msg.round, msg.scheme, self.scheme.name)
             return
         self._answered.add(msg.round)
+        with self.metrics.record("answer_total", round=msg.round):
+            await self._attest(conn_id, msg, r)
 
+    async def _attest(self, conn_id: str, msg: Challenge, r) -> None:
         with self.metrics.record("challenge_respond", round=msg.round, scheme=self.scheme.name):
             result = await asyncio.to_thread(self.scheme.respond, msg.payload, r.nonce)
 

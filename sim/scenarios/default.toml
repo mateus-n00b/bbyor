@@ -1,0 +1,23 @@
+# Experiment scenario; see sim/generate.py
+seed = 12
+scheme = "fhe"          # fhe | plain
+attestation = "zk"      # zk | signature
+min_interval = 30       # round length bounds, seconds
+max_interval = 40
+von_network = "http://localhost:9000"
+api_port_base = 8100    # nodeN is published on api_port_base + N
+
+# One entry per node; `count` expands to that many identical nodes
+[[nodes]]
+count = 2
+behaviour = "honest"
+
+[[nodes]]
+count = 1
+behaviour = "intermittent"
+fail_probability = 0.3
+
+[[nodes]]
+count = 1
+behaviour = "on_off"
+attack_threshold = 600
