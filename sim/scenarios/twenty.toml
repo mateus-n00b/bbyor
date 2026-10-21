@@ -1,0 +1,25 @@
+# 20 nodes: 16 honest, 2 faulty (intermittent), 2 strategic attackers (on/off).
+# node0 is the keeper, so the honest group comes first.
+seed = 20
+scheme = "fhe"
+attestation = "zk"
+min_interval = 30
+max_interval = 40
+von_network = "http://localhost:9000"
+api_port_base = 8100    # node0..node19 on 8100..8119
+
+[[nodes]]
+count = 16
+behaviour = "honest"
+
+# Faulty: skip serving in 30% of their rounds
+[[nodes]]
+count = 2
+behaviour = "intermittent"
+fail_probability = 0.3
+
+# Attackers: behave until reputation reaches 0.6, then stop serving
+[[nodes]]
+count = 2
+behaviour = "on_off"
+attack_threshold = 600
