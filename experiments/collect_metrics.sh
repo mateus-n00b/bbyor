@@ -8,6 +8,8 @@
 
 set -euo pipefail
 
+# docker or podman; override with CONTAINER_CLI=...
+CLI="${CONTAINER_CLI:-$(command -v docker >/dev/null && echo docker || echo podman)}"
 METRICS_PATH_IN_CONTAINER="/home/bbyor/metrics.jsonl"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 OUTPUT_DIR="${1:-./metrics_output/${TIMESTAMP}}"
@@ -20,7 +22,7 @@ echo "Destino: ${OUTPUT_DIR}"
 echo ""
 
 # Descobre containers cujo nome contém "node" e estão rodando
-CONTAINERS=$(docker ps --filter "label=com.docker.compose.project=bbyor" --filter "name=node" --format "{{.Names}}" | sort -V)
+CONTAINERS=$($CLI ps --filter "label=com.docker.compose.project=bbyor" --filter "name=node" --format "{{.Names}}" | sort -V)
 
 if [ -z "$CONTAINERS" ]; then
     echo "Nenhum container com 'node' no nome encontrado em execução."
@@ -36,8 +38,8 @@ while IFS= read -r CONTAINER; do
     DEST="${OUTPUT_DIR}/metrics_${CONTAINER}.jsonl"
 
     # Verifica se o arquivo existe no container antes de copiar
-    if docker exec "$CONTAINER" test -f "$METRICS_PATH_IN_CONTAINER" 2>/dev/null; then
-        docker cp "${CONTAINER}:${METRICS_PATH_IN_CONTAINER}" "$DEST" 2>/dev/null
+    if "$CLI" exec "$CONTAINER" test -f "$METRICS_PATH_IN_CONTAINER" 2>/dev/null; then
+        "$CLI" cp "${CONTAINER}:${METRICS_PATH_IN_CONTAINER}" "$DEST" 2>/dev/null
         LINES=$(wc -l < "$DEST")
         echo "  [OK] ${CONTAINER}: ${LINES} entradas → ${DEST}"
         cat "$DEST" >> "$MERGED_FILE"

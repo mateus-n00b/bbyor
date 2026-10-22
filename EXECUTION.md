@@ -100,6 +100,13 @@ uv run --project node python sim/generate.py sim/scenarios/default.toml
 
 Saída em `sim/out/`: `peers.json`, `docker-compose.yml` e `.env`.
 
+**Podman**: use `runtime = "podman"` no cenário. Os agentes então acessam o
+von-network do host por `host.containers.internal` (Podman ≥ 4.1), já que
+`host-gateway` só existe no Docker e no Podman ≥ 5.3. Se o ledger estiver em
+outra máquina, defina `genesis_url = "http://<ip>:9000/genesis"`. O
+`collect_metrics.sh` usa `docker` quando existir e `podman` caso contrário
+(ou force com `CONTAINER_CLI=podman`).
+
 ## Passo 4 — Subir
 
 ```bash

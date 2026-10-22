@@ -34,14 +34,29 @@ def register_did(von_url: str, seed: str) -> str:
     return r.json()["did"]
 
 
-def agent_service(i: int, seed: str) -> dict:
-    return {
+# How containers reach von-network on the host, per runtime
+HOST_ALIASES = {
+    # host-gateway is Docker-only (Podman accepts it from 5.3)
+    "docker": ("host.docker.internal", ["host.docker.internal:host-gateway"]),
+    # Podman >= 4.1 adds host.containers.internal to /etc/hosts by itself
+    "podman": ("host.containers.internal", []),
+}
+
+
+def agent_service(i: int, seed: str, scenario: dict) -> dict:
+    runtime = scenario.get("runtime", "docker")
+    if runtime not in HOST_ALIASES:
+        raise SystemExit(f"runtime must be one of {sorted(HOST_ALIASES)}, got {runtime!r}")
+    host, extra_hosts = HOST_ALIASES[runtime]
+    genesis_url = scenario.get("genesis_url", f"http://{host}:9000/genesis")
+
+    service = {
         "image": "ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.2-lts",
         "restart": "unless-stopped",
         "command": " ".join([
             "start --inbound-transport http 0.0.0.0 8020 --outbound-transport http",
             f"--endpoint http://agent{i}:8020 --label NODE{i} --seed {seed}",
-            "--genesis-url http://host.docker.internal:9000/genesis --ledger-pool-name localindypool",
+            f"--genesis-url {genesis_url} --ledger-pool-name localindypool",
             f"--wallet-type askar-anoncreds --wallet-name wallet{i} --wallet-key insecure-dev-key",
             "--wallet-storage-type postgres_storage",
             """--wallet-storage-config '{"url":"postgres:5432","wallet_scheme":"DatabasePerWallet"}'""",
@@ -50,9 +65,11 @@ def agent_service(i: int, seed: str) -> dict:
             "--auto-accept-invites --auto-accept-requests --public-invites --requests-through-public-did",
             f"--webhook-url http://node{i}:8000 --max-message-size 4194304 --log-level warning",
         ]),
-        "extra_hosts": ["host.docker.internal:host-gateway"],
         "depends_on": ["postgres"],
     }
+    if extra_hosts:
+        service["extra_hosts"] = extra_hosts
+    return service
 
 
 def node_service(i: int, node: dict, did: str, key: str, scenario: dict) -> dict:
@@ -108,7 +125,7 @@ def compose(nodes, dids, keys, seeds, scenario) -> dict:
     }
     volumes = {"postgres-data": {}}
     for i, node in enumerate(nodes):
-        services[f"agent{i}"] = agent_service(i, seeds[i])
+        services[f"agent{i}"] = agent_service(i, seeds[i], scenario)
         services[f"node{i}"] = node_service(i, node, dids[i], keys[i], scenario)
         volumes[f"node{i}-data"] = {}
     return {"services": services, "volumes": volumes}

@@ -5,6 +5,8 @@ attestation = "zk"      # zk | signature
 min_interval = 30       # round length bounds, seconds
 max_interval = 40
 von_network = "http://localhost:9000"
+runtime = "docker"      # docker | podman (how agents reach von-network on the host)
+# genesis_url = "http://10.0.0.5:9000/genesis"   # override when the ledger is elsewhere
 api_port_base = 8100    # nodeN is published on api_port_base + N
 
 # One entry per node; `count` expands to that many identical nodes

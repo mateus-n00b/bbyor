@@ -6,7 +6,10 @@ attestation = "zk"
 min_interval = 30
 max_interval = 40
 von_network = "http://localhost:9000"
+runtime = "podman"      # docker | podman (how agents reach von-network on the host)
 api_port_base = 8100    # node0..node19 on 8100..8119
+rounds = 400          # o experimento termina após 400 rodadas finalizadas
+
 
 [[nodes]]
 count = 16
