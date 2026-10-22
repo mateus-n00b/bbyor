@@ -1,9 +1,11 @@
 """FastAPI app: receives ACA-Py webhooks and runs the node loop."""
 import asyncio
+import json
 import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from web3 import AsyncHTTPProvider, AsyncWeb3
 
 from .agent import AcapyClient
 from .behaviour import build_behaviour
@@ -25,6 +27,28 @@ async def connect_to_peers(node: Node) -> None:
             await node.agent.connect(did)
         except Exception as err:
             log.warning("could not connect to %s: %s", did, err)
+
+
+async def wait_for_deployment(settings: Settings, timeout: float = 600.0) -> None:
+    """Waits until deployment_file points at a contract that exists on the chain.
+
+    Some compose implementations (older podman-compose) ignore
+    `condition: service_completed_successfully`, and a deployment file left by
+    a previous run names an address with no code on a fresh chain.
+    """
+    w3 = AsyncWeb3(AsyncHTTPProvider(settings.provider_url))
+    async with asyncio.timeout(timeout):
+        while True:
+            try:
+                address = json.loads(settings.deployment_file.read_text())["address"]
+                if await w3.eth.get_code(address):
+                    return
+                log.info("no contract at %s yet, waiting for deploy", address)
+            except (OSError, ValueError, KeyError) as err:
+                log.info("waiting for %s: %s", settings.deployment_file, err)
+            except Exception as err:  # chain not reachable yet
+                log.info("waiting for chain at %s: %s", settings.provider_url, err)
+            await asyncio.sleep(2)
 
 
 def build_node(settings: Settings) -> Node:
@@ -53,6 +77,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        await wait_for_deployment(settings)
         node = build_node(settings)
         app.state.node = node
         if node.zk:

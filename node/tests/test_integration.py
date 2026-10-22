@@ -151,3 +151,18 @@ async def test_withholding_server_is_penalized(deployment):
 
     assert r.finalized and r.commitment == 0 and r.responses == 0
     assert await chain.reputation(r.server) == before[r.server] // 2
+
+
+async def test_waits_for_a_deployment_with_code(deployment, tmp_path):
+    from bbyor.app import wait_for_deployment
+    from bbyor.config import Settings
+
+    url, dep_file, _ = deployment
+    stale = tmp_path / "stale.json"
+    stale.write_text(json.dumps({"address": "0x" + "ab" * 20, "abi": []}))
+
+    with pytest.raises(TimeoutError):
+        await wait_for_deployment(Settings(public_did="x", private_key=KEYS[0], provider_url=url,
+                                           deployment_file=stale), timeout=3)
+    await wait_for_deployment(Settings(public_did="x", private_key=KEYS[0], provider_url=url,
+                                       deployment_file=dep_file), timeout=10)
