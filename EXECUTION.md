@@ -138,6 +138,17 @@ Reputação por rodada (CSV):
 uv run --project node python experiments/collect_reputation.py --out reputation.csv
 ```
 
+Heatmap da reputação por nó (mesmo estilo da versão original):
+
+```bash
+python3 experiments/plot_reputation.py reputation.csv reputation.png \
+    --peers sim/out/peers.json   # linhas na ordem node0..nodeN; sem isso, ordem de aparição
+# --bin 5 muda o intervalo (minutos)
+```
+
+O tempo vem do relógio da cadeia (`block_time`), então o coletor pode ser
+iniciado depois do experimento começar.
+
 Métricas de latência dos nós (JSONL) e gráficos:
 
 ```bash

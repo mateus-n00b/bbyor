@@ -21,7 +21,9 @@ async def collect(provider: str, deployment: Path, out: Path, interval: float) -
     start = time.time()
     with open(out, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["elapsed_s", "round", "server", "did", "responses", "eligible", "reputation"])
+        # block_time is the chain's clock: unlike elapsed_s it is right even for
+        # rounds that finished before the collector started
+        writer.writerow(["elapsed_s", "block_time", "round", "server", "did", "responses", "eligible", "reputation"])
         while True:
             events, next_block = await chain.events_since(next_block)
             for ev in events:
@@ -29,7 +31,8 @@ async def collect(provider: str, deployment: Path, out: Path, interval: float) -
                     continue
                 a = ev.args
                 did = await chain.did_of(a["server"])
-                writer.writerow([round(time.time() - start, 1), a["round"], a["server"], did,
+                block_time = (await chain.w3.eth.get_block(ev.block))["timestamp"]
+                writer.writerow([round(time.time() - start, 1), block_time, a["round"], a["server"], did,
                                  a["responses"], a["eligible"], a["rep"] / 1000])
                 f.flush()
                 print(f"round {a['round']:4d}  {did}  {a['responses']}/{a['eligible']}  rep={a['rep'] / 1000:.3f}")
