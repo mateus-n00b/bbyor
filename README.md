@@ -11,7 +11,8 @@ submits a Groth16 proof bound to the round and to its own account. When the
 round ends, the server's reputation is updated from the response quorum.
 
 The protocol, the reputation rule and the threat model are in
-[docs/PROTOCOL.md](docs/PROTOCOL.md). How to run an experiment is in
+[docs/PROTOCOL.md](docs/PROTOCOL.md), and the software design document is
+[docs/SDD.md](docs/SDD.md). How to run an experiment is in
 [EXECUTION.md](EXECUTION.md).
 
 ## Layout
