@@ -1,12 +1,12 @@
 # 20 nodes: 16 honest, 2 faulty (intermittent), 2 strategic attackers (on/off).
 # node0 is the keeper, so the honest group comes first.
 seed = 20
-scheme = "fhe"
-attestation = "zk"
+scheme = "plain"
+attestation = "signature"
 min_interval = 30
 max_interval = 40
 von_network = "http://localhost:9000"
-runtime = "podman"      # docker | podman (how agents reach von-network on the host)
+runtime = "docker"      # docker | podman (how agents reach von-network on the host)
 api_port_base = 8100    # node0..node19 on 8100..8119
 rounds = 400          # o experimento termina após 400 rodadas finalizadas
 
